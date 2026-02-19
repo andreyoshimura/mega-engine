@@ -1,0 +1,34 @@
+name: Mega Daily Generate
+
+on:
+  schedule:
+    - cron: "15 10 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: |
+          pip install pandas numpy requests
+
+      - run: |
+          python core/ingest_megasena.py
+          python core/features_megasena.py
+          python core/generator.py
+
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "bot@github.com"
+          git add out/jogos_gerados.json data/results/megasena.csv data/features/dezenas.csv
+          git commit -m "update mega output" || echo "no changes"
+          git push
