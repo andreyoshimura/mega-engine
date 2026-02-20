@@ -25,7 +25,9 @@ from pathlib import Path
 #
 # Observação importante:
 # - Numpy/Pandas usam tipos como numpy.int64, que NÃO são serializáveis por
-#   json.dump() diretamente. Por isso, convertemos tudo para int nativo.
+#   json.dump() diretamente. Por isso:
+#   1) Convertemos as dezenas para int nativo.
+#   2) Usamos json.dump(..., default=...) para blindar qualquer numpy que escape.
 # -----------------------------------------------------------------------------
 
 FEATURES_PATH = Path("data/features/dezenas.csv")
@@ -41,9 +43,9 @@ def weighted_sample(probs, k):
     Amostra k dezenas (sem reposição) usando pesos proporcionais a 'probs'.
 
     Implementação:
-    - Usa um truque comum de amostragem ponderada via "exponential race":
+    - Amostragem ponderada via "exponential race":
       weights = -log(U) / p, onde U~Uniform(0,1) e p são probabilidades.
-      Os menores weights são selecionados.
+      Seleciona os menores weights.
 
     Retorno:
     - Lista ordenada de inteiros (1..N), usando int nativo (JSON friendly).
@@ -86,11 +88,26 @@ def generate_games():
     return selected[:N_GAMES]
 
 
+def _json_default(o):
+    """
+    Conversor padrão para json.dump, para tratar tipos numpy (int64, float64, ndarray).
+    Evita: TypeError: Object of type int64 is not JSON serializable
+    """
+    if isinstance(o, np.integer):
+        return int(o)
+    if isinstance(o, np.floating):
+        return float(o)
+    if isinstance(o, np.ndarray):
+        return o.tolist()
+    raise TypeError(f"Object of type {type(o).__name__} is not JSON serializable")
+
+
 def export_json(games):
     """
     Exporta os jogos gerados para JSON.
 
-    - Garante que todos os números sejam int nativo para não falhar no json.dump.
+    - Converte explicitamente as dezenas para int nativo.
+    - Usa json.dump com default=_json_default para blindar qualquer numpy que escape.
     - Cria a pasta 'out/' se necessário.
     """
     output = {
@@ -106,13 +123,13 @@ def export_json(games):
         output["games"].append(
             {
                 "id": f"J{str(i+1).zfill(2)}",
-                "numbers": [int(x) for x in g],  # redundância segura (int nativo)
+                "numbers": [int(x) for x in g],
             }
         )
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(OUT_PATH, "w", encoding="utf-8") as f:
-        json.dump(output, f, indent=2)
+        json.dump(output, f, indent=2, default=_json_default)
 
 
 if __name__ == "__main__":
