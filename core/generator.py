@@ -3,27 +3,74 @@ import numpy as np
 import json
 from pathlib import Path
 
+# -----------------------------------------------------------------------------
+# core/generator.py
+#
+# Função:
+# - Gera N_GAMES jogos (apostas) de Mega-Sena com TICKET_SIZE dezenas cada.
+# - Usa um CSV de features (data/features/dezenas.csv) como base de pesos
+#   (coluna "freq_100") para amostragem ponderada das dezenas.
+# - Exporta o resultado para um JSON (out/jogos_gerados.json) para consumo
+#   por outras etapas do pipeline (ex.: versionamento no repo, ingest, etc.).
+#
+# Dependências / Entradas:
+# - Arquivo obrigatório: data/features/dezenas.csv
+#   - Deve conter a coluna "freq_100" (numérica).
+#   - A ordem das linhas define o índice das dezenas: linha 0 -> dezena 1,
+#     linha 1 -> dezena 2, etc. (porque usamos +1 no índice do array).
+#
+# Saídas:
+# - out/jogos_gerados.json
+#   - Estrutura: metadados do "experimento" + lista de jogos gerados.
+#
+# Observação importante:
+# - Numpy/Pandas usam tipos como numpy.int64, que NÃO são serializáveis por
+#   json.dump() diretamente. Por isso, convertemos tudo para int nativo.
+# -----------------------------------------------------------------------------
+
 FEATURES_PATH = Path("data/features/dezenas.csv")
 OUT_PATH = Path("out/jogos_gerados.json")
 
-N_GAMES = 15
-TICKET_SIZE = 9
-N_SIM = 5000
+N_GAMES = 15       # Quantidade de jogos a selecionar
+TICKET_SIZE = 9    # Quantidade de dezenas por jogo
+N_SIM = 5000       # Quantidade de candidatos simulados antes da seleção
 
 
 def weighted_sample(probs, k):
+    """
+    Amostra k dezenas (sem reposição) usando pesos proporcionais a 'probs'.
+
+    Implementação:
+    - Usa um truque comum de amostragem ponderada via "exponential race":
+      weights = -log(U) / p, onde U~Uniform(0,1) e p são probabilidades.
+      Os menores weights são selecionados.
+
+    Retorno:
+    - Lista ordenada de inteiros (1..N), usando int nativo (JSON friendly).
+    """
     weights = -np.log(np.random.rand(len(probs))) / probs
-    return sorted(np.argsort(weights)[:k] + 1)
+    idx = np.argsort(weights)[:k] + 1  # +1 para mapear índice 0 -> dezena 1
+    return sorted(map(int, idx))       # converte numpy.int64 -> int
 
 
 def generate_games():
+    """
+    Gera jogos candidatos com amostragem ponderada e depois seleciona um
+    subconjunto com baixa sobreposição entre jogos.
+
+    Regras:
+    - Gera N_SIM candidatos (cada um com TICKET_SIZE dezenas).
+    - Seleciona até N_GAMES jogos garantindo que a interseção com qualquer
+      jogo já selecionado seja <= 4 dezenas (diversificação).
+    """
     df = pd.read_csv(FEATURES_PATH)
 
+    # Probabilidades derivadas da coluna freq_100 (quanto maior, mais provável).
+    # 1e-6 evita probabilidade zero, que quebraria a divisão / amostragem.
     scores = df["freq_100"].values + 1e-6
     probs = scores / scores.sum()
 
     candidates = []
-
     for _ in range(N_SIM):
         game = weighted_sample(probs, TICKET_SIZE)
         candidates.append(game)
@@ -32,6 +79,7 @@ def generate_games():
     for g in candidates:
         if len(selected) >= N_GAMES:
             break
+        # Critério de diversidade: no máximo 4 dezenas iguais entre jogos
         if all(len(set(g).intersection(set(s))) <= 4 for s in selected):
             selected.append(g)
 
@@ -39,11 +87,17 @@ def generate_games():
 
 
 def export_json(games):
+    """
+    Exporta os jogos gerados para JSON.
+
+    - Garante que todos os números sejam int nativo para não falhar no json.dump.
+    - Cria a pasta 'out/' se necessário.
+    """
     output = {
         "game": "megasena",
-        "ticket_size": 9,
+        "ticket_size": TICKET_SIZE,
         "draw_size": 6,
-        "n_games": 15,
+        "n_games": N_GAMES,
         "objective": "maximize_hit_rate_ge4",
         "games": [],
     }
@@ -52,12 +106,12 @@ def export_json(games):
         output["games"].append(
             {
                 "id": f"J{str(i+1).zfill(2)}",
-                "numbers": g,
+                "numbers": [int(x) for x in g],  # redundância segura (int nativo)
             }
         )
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(OUT_PATH, "w") as f:
+    with open(OUT_PATH, "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2)
 
 
