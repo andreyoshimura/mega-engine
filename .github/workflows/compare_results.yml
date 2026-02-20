@@ -1,9 +1,15 @@
 name: Compare Mega-Sena Results
 
 on:
-  schedule:
-    - cron: "10 1 * * *"   # diário (UTC). Ajuste se quiser.
+  # Roda automaticamente quando o workflow de geração terminar com sucesso
+  workflow_run:
+    workflows: ["Daily Generate Mega-Sena JSON"]
+    types: [completed]
+
+  # Mantém também execução manual e agendada (fallback)
   workflow_dispatch:
+  schedule:
+    - cron: "10 1 * * *" # diário (UTC)
 
 permissions:
   contents: write
@@ -11,6 +17,12 @@ permissions:
 jobs:
   compare:
     runs-on: ubuntu-latest
+
+    # Se foi disparado por workflow_run, só continua se o generate foi sucesso.
+    if: >
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+
     steps:
       - uses: actions/checkout@v4
 
