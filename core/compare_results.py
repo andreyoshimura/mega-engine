@@ -26,7 +26,7 @@ MIN_N = 1
 MAX_N = 60
 DRAW_SIZE = 6
 TICKET_SIZE = 9
-N_GAMES = 15
+N_GAMES = 5
 
 
 @dataclass(frozen=True)
