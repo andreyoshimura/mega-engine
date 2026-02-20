@@ -6,7 +6,7 @@ from pathlib import Path
 FEATURES_PATH = Path("data/features/dezenas.csv")
 OUT_PATH = Path("out/jogos_gerados.json")
 
-N_GAMES = 15
+N_GAMES = 5
 TICKET_SIZE = 9
 N_SIM = 5000
 
