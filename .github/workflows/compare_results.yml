@@ -1,0 +1,35 @@
+name: Compare Mega-Sena Results
+
+on:
+  schedule:
+    - cron: "10 1 * * *"   # diário (UTC). Ajuste se quiser.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          pip install requests
+
+      - name: Compare latest draw vs generated games
+        run: |
+          python core/compare_results.py
+
+      - name: Commit logs (if changed)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/performance_log.jsonl data/last_result.json
+          git commit -m "chore: log Mega-Sena results" || echo "no changes"
+          git push
