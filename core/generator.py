@@ -23,11 +23,11 @@ from pathlib import Path
 # - out/jogos_gerados.json
 #   - Estrutura: metadados do "experimento" + lista de jogos gerados.
 #
-# Observação importante:
-# - Numpy/Pandas usam tipos como numpy.int64, que NÃO são serializáveis por
-#   json.dump() diretamente. Por isso:
-#   1) Convertemos as dezenas para int nativo.
-#   2) Usamos json.dump(..., default=...) para blindar qualquer numpy que escape.
+# Problema que este arquivo resolve:
+# - json.dump() não serializa tipos numpy (ex.: numpy.int64).
+# - Por isso:
+#   1) Convertemos as dezenas para int nativo (Python int).
+#   2) Usamos json.dump(..., default=_json_default) para blindar o output.
 # -----------------------------------------------------------------------------
 
 FEATURES_PATH = Path("data/features/dezenas.csv")
@@ -51,8 +51,8 @@ def weighted_sample(probs, k):
     - Lista ordenada de inteiros (1..N), usando int nativo (JSON friendly).
     """
     weights = -np.log(np.random.rand(len(probs))) / probs
-    idx = np.argsort(weights)[:k] + 1  # +1 para mapear índice 0 -> dezena 1
-    return sorted(map(int, idx))       # converte numpy.int64 -> int
+    idx = np.argsort(weights)[:k] + 1  # +1: índice 0 -> dezena 1
+    return sorted(map(int, idx))       # numpy.int64 -> int
 
 
 def generate_games():
@@ -67,21 +67,19 @@ def generate_games():
     """
     df = pd.read_csv(FEATURES_PATH)
 
-    # Probabilidades derivadas da coluna freq_100 (quanto maior, mais provável).
-    # 1e-6 evita probabilidade zero, que quebraria a divisão / amostragem.
+    # Probabilidades derivadas da coluna freq_100.
+    # 1e-6 evita probabilidade zero (quebraria a divisão / amostragem).
     scores = df["freq_100"].values + 1e-6
     probs = scores / scores.sum()
 
     candidates = []
     for _ in range(N_SIM):
-        game = weighted_sample(probs, TICKET_SIZE)
-        candidates.append(game)
+        candidates.append(weighted_sample(probs, TICKET_SIZE))
 
     selected = []
     for g in candidates:
         if len(selected) >= N_GAMES:
             break
-        # Critério de diversidade: no máximo 4 dezenas iguais entre jogos
         if all(len(set(g).intersection(set(s))) <= 4 for s in selected):
             selected.append(g)
 
@@ -90,7 +88,7 @@ def generate_games():
 
 def _json_default(o):
     """
-    Conversor padrão para json.dump, para tratar tipos numpy (int64, float64, ndarray).
+    Conversor padrão para json.dump() para tratar tipos numpy.
     Evita: TypeError: Object of type int64 is not JSON serializable
     """
     if isinstance(o, np.integer):
@@ -107,7 +105,7 @@ def export_json(games):
     Exporta os jogos gerados para JSON.
 
     - Converte explicitamente as dezenas para int nativo.
-    - Usa json.dump com default=_json_default para blindar qualquer numpy que escape.
+    - Usa json.dump com default=_json_default para blindar qualquer numpy.
     - Cria a pasta 'out/' se necessário.
     """
     output = {
@@ -123,7 +121,7 @@ def export_json(games):
         output["games"].append(
             {
                 "id": f"J{str(i+1).zfill(2)}",
-                "numbers": [int(x) for x in g],
+                "numbers": [int(x) for x in g],  # redundância segura
             }
         )
 
