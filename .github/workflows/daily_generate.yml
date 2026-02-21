@@ -33,8 +33,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # inclui o snapshot diário (out/history) além do arquivo atual
-          git add out/jogos_gerados.json out/history data/results/megasena.csv data/features/dezenas.csv
+          git add out/jogos_gerados.json
+          git add data/results/megasena.csv
+          git add data/features/dezenas.csv
+
+          # adiciona histórico só se existir (evita erro pathspec)
+          if [ -d "out/history" ]; then
+            git add out/history
+          fi
 
           git commit -m "chore: update mega artifacts" || echo "no changes"
           git push
