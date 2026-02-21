@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -88,7 +89,7 @@ def fetch_latest_draw() -> LatestDraw:
         _parse_int_list(dezenas_raw),
         expected_len=DRAW_SIZE,
         min_n=MIN_N,
-        max_n=MAX_N
+        max_n=MAX_N,
     )
 
     return LatestDraw(concurso=concurso, data=data_sorteio, dezenas=tuple(dezenas))
@@ -130,7 +131,7 @@ def load_generated_games() -> Tuple[int, List[Tuple[str, List[int]]]]:
             _parse_int_list(g.get("numbers")),
             expected_len=TICKET_SIZE,
             min_n=MIN_N,
-            max_n=MAX_N
+            max_n=MAX_N,
         )
         out.append((gid, nums))
 
@@ -176,7 +177,7 @@ def compute_hits(draw_set: Set[int], games: List[Tuple[str, List[int]]]) -> Dict
             "count_eq6": eq6,
             "score": score,
             "hist_hits_count": hist,
-        }
+        },
     }
 
 
@@ -226,16 +227,23 @@ def main() -> None:
 
     latest = fetch_latest_draw()
 
-    _write_json(LAST_RESULT, {
-        "concurso": latest.concurso,
-        "data": latest.data,
-        "dezenas": list(latest.dezenas),
-        "fetched_at_utc": datetime.now(timezone.utc).isoformat()
-    })
+    _write_json(
+        LAST_RESULT,
+        {
+            "concurso": latest.concurso,
+            "data": latest.data,
+            "dezenas": list(latest.dezenas),
+            "fetched_at_utc": datetime.now(timezone.utc).isoformat(),
+        },
+    )
 
     if already_logged(latest.concurso):
         print(f"[COMPARE] Concurso {latest.concurso} já logado.")
         return
+
+    # --- meta de versionamento ---
+    git_sha = os.getenv("GITHUB_SHA", "").strip() or "unknown"
+    strategy = os.getenv("STRATEGY_NAME", "").strip() or "megasena_v1"
 
     n_games_runtime, games = load_generated_games()
     draw_set = set(latest.dezenas)
@@ -251,6 +259,10 @@ def main() -> None:
         "dezenas_sorteadas": list(latest.dezenas),
         "ticket_size": TICKET_SIZE,
         "n_games": n_games_runtime,
+        "meta": {
+            "git_sha": git_sha,
+            "strategy": strategy,
+        },
         **result["summary"],
         "rolling_20": rolling,
         "games": result["per_game"],
@@ -262,7 +274,9 @@ def main() -> None:
         f"[COMPARE] OK: concurso={latest.concurso} "
         f"n_games={n_games_runtime} "
         f"max_hits={event['max_hits']} "
-        f"score={event['score']}"
+        f"score={event['score']} "
+        f"sha={git_sha[:7]} "
+        f"strategy={strategy}"
     )
 
 
