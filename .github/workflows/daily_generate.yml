@@ -8,11 +8,17 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: daily-generate-main
+  cancel-in-progress: false
+
 jobs:
   run:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -31,16 +37,19 @@ jobs:
       - name: Commit artifacts (if changed)
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add out/jogos_gerados.json
           git add data/results/megasena.csv
           git add data/features/dezenas.csv
 
-          # adiciona histórico só se existir (evita erro pathspec)
           if [ -d "out/history" ]; then
             git add out/history
           fi
 
-          git commit -m "chore: update mega artifacts" || echo "no changes"
-          git push
+          # só commita se tiver mudanças
+          git diff --cached --quiet || git commit -m "chore: update mega artifacts"
+
+          # sincroniza com remoto para evitar "rejected (fetch first)"
+          git pull --rebase origin main
+          git push origin HEAD:main
