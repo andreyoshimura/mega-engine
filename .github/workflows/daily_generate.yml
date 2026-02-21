@@ -18,17 +18,23 @@ jobs:
         with:
           python-version: "3.11"
 
-      - run: |
+      - name: Install deps
+        run: |
           pip install pandas numpy requests
 
-      - run: |
+      - name: Ingest + Features + Generate
+        run: |
           python core/ingest_megasena.py
           python core/features_megasena.py
           python core/generator.py
 
-      - run: |
+      - name: Commit artifacts (if changed)
+        run: |
           git config user.name "github-actions[bot]"
-          git config user.email "bot@github.com"
-          git add out/jogos_gerados.json data/results/megasena.csv data/features/dezenas.csv
-          git commit -m "update mega output" || echo "no changes"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # inclui o snapshot diário (out/history) além do arquivo atual
+          git add out/jogos_gerados.json out/history data/results/megasena.csv data/features/dezenas.csv
+
+          git commit -m "chore: update mega artifacts" || echo "no changes"
           git push
