@@ -35,6 +35,9 @@ jobs:
           pip install requests
 
       - name: Compare latest draw vs generated games
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          STRATEGY_NAME: megasena_v1
         run: |
           python core/compare_results.py
 
