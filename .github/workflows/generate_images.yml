@@ -1,1 +1,38 @@
+name: Generate Weekly Mega Image
 
+on:
+  schedule:
+    - cron: "0 10 * * 1"  # Segunda 07:00 BRT
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          pip install openai
+
+      - name: Generate image
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python core/image_generator.py
+
+      - name: Commit image
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add out/images/
+          git commit -m "chore: weekly Mega image" || echo "No changes"
+          git push
