@@ -154,21 +154,117 @@ https://loteriascaixa-api.herokuapp.com/api/megasena/latest
 
 # 🚀 Próximos Passos (Roadmap)
 
-Fase 2:
 
-- Backtest walk-forward automatizado
-- Ajuste automático de pesos
-- Métrica evolutiva de estratégia
-- Guard contra regressão
-- Versionamento de estratégia
-- Modularização para suportar Lotofácil
-- Dashboard simplificado de performance
+## 🎯 Objetivo
+Evoluir a mega-engine de um gerador heurístico operacional para um sistema estatístico auditável, autoajustável e preparado para estratégias adaptativas.
 
-Fase 3:
+---
 
-- Otimização paramétrica automática
-- Estratégias múltiplas comparáveis
-- Modelo adaptativo com aprendizado baseado em performance
+## 🔵 Fase 2 — Estrutura Estatística e Evolução Controlada
+
+### 🔹 Backtest Walk-Forward Automatizado
+- Avaliação temporal fiel (treina no passado, testa no próximo concurso).
+- Métricas:
+  - média de acertos
+  - taxa ≥4
+  - taxa ≥5
+  - max_hits médio
+  - score estratégico
+- Garantia de ausência de vazamento de dados futuros.
+
+### 🔹 Módulo de Pesos Ajustáveis
+- Estrutura configurável:
+  - w20
+  - w50
+  - w100
+  - w_delay
+  - w_bayes
+  - alpha_score
+- Carregamento via JSON / ENV / CLI.
+- Separação clara entre estatística e geração.
+
+### 🔹 Penalização de Pares Fracos (1–60)
+- Cálculo de coocorrência histórica.
+- Identificação de bottom_k pares.
+- Penalização no score do jogo.
+- Regularização estrutural.
+
+### 🔹 Diversidade Entre Jogos
+- Restrição de diferença mínima (symmetric difference).
+- Controle de concentração entre jogos.
+- Melhor distribuição do portfólio.
+
+### 🔹 Ajuste Automático de Pesos
+- Random search / hill-climbing inicial.
+- Seleção baseada em backtest walk-forward.
+- Aplicação automática da melhor configuração.
+
+### 🔹 Métrica Evolutiva de Estratégia
+- Score composto e padronizado.
+- Comparação histórica de performance.
+- Monitoramento de estabilidade.
+
+### 🔹 Guard Contra Regressão
+- Nova estratégia só é aplicada se superar baseline.
+- Prevenção de overfitting recente.
+- Validação mínima de janela histórica.
+
+### 🔹 Versionamento de Estratégia
+- Registro automático em `data/model_history.jsonl`:
+  - timestamp
+  - janela usada
+  - candidatos testados
+  - score obtido
+  - pesos aplicados
+- Auditoria e rollback possíveis.
+
+### 🔹 Modularização para Suportar Lotofácil
+- Estrutura adaptável para múltiplas loterias.
+- Separação de regras específicas por jogo.
+- Núcleo estatístico reutilizável.
+
+### 🔹 Dashboard Simplificado de Performance
+- Resumo:
+  - média móvel de acertos
+  - taxa ≥4 / ≥5
+  - max_hits
+- Visualização simplificada para acompanhamento.
+
+---
+
+## 🟣 Fase 3 — Sistema Adaptativo e Estratégias Avançadas
+
+### 🔹 Otimização Paramétrica Automática
+- Exploração inteligente de hiperparâmetros.
+- Evolução futura:
+  - Bayesian Optimization
+  - Simulated Annealing
+  - CMA-ES
+
+### 🔹 Estratégias Múltiplas Comparáveis
+- Execução paralela de modelos distintos.
+- Ranking por performance real.
+- Portfólio de estratégias concorrentes.
+
+### 🔹 Modelo Adaptativo com Aprendizado Baseado em Performance
+- Ajuste dinâmico baseado em resultados recentes.
+- Controle de estabilidade para evitar drift.
+- Possível integração futura com ML supervisionado.
+
+---
+
+## 🧠 Meta Final
+
+Transformar a mega-engine em:
+
+- ✔ Estatisticamente estruturada  
+- ✔ Autoajustável  
+- ✔ Auditável  
+- ✔ Versionada  
+- ✔ Preparada para múltiplas loterias  
+- ✔ Adaptativa e comparável entre estratégias  
+
+---
 
 ---
 
@@ -202,5 +298,46 @@ O objetivo é construir um sistema mensurável, automatizado e evolutivo para an
 ✔ Pronto para evolução  
 
 ---
+## 📊 Nível Atual de Maturidade
 
+**Estágio:** Operacional Estruturado (MVP Avançado)
+
+A mega-engine encontra-se em um nível de maturidade onde:
+
+✔ Pipeline automatizado estável (ingestão → geração → comparação → publicação)  
+✔ Processamento determinístico e reprodutível  
+✔ Logs persistentes e auditáveis (JSONL)  
+✔ Integração completa com n8n (Telegram, Gmail, Instagram)  
+✔ Estrutura modular preparada para expansão estatística  
+
+### 🔎 Características Técnicas Atuais
+- Modelo heurístico baseado em frequência histórica
+- Geração automática de múltiplos jogos
+- Comparação automática com resultados oficiais
+- Registro histórico de performance
+- Publicação multi-plataforma automatizada
+
+### 🚧 Ainda Não Implementado (Planejado na Fase 2)
+- Backtest walk-forward automatizado
+- Otimização automática de pesos
+- Penalização estrutural de pares fracos
+- Diversidade controlada entre jogos
+- Sistema adaptativo com aprendizado baseado em performance
+
+---
+
+### 🧠 Classificação de Maturidade
+
+| Dimensão                  | Status |
+|---------------------------|--------|
+| Automação Operacional     | ✔ Alto |
+| Observabilidade           | ✔ Alto |
+| Modelagem Estatística     | ◑ Intermediário |
+| Otimização Paramétrica    | ⬜ Não Implementado |
+| Aprendizado Adaptativo    | ⬜ Não Implementado |
+
+---
+
+**Resumo:**  
+O sistema é operacionalmente robusto e pronto para evolução estatística avançada.
 Mega Engine — Estatística aplicada, mensuração real e evolução contínua.
