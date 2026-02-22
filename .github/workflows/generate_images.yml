@@ -1,83 +1,65 @@
 name: Generate Weekly Mega Image
 
-# ============================================================
-# Este workflow:
-# 1. Executa automaticamente toda segunda-feira
-# 2. Pode ser executado manualmente
-# 3. Gera imagem via core/image_generator.py
-# 4. Salva em out/images/
-# 5. Faz commit automático se houver alteração
-# ============================================================
-
 on:
-  schedule:
-    # Segunda-feira às 10:00 UTC (07:00 Brasil BRT)
-    - cron: "0 10 * * 1"
+  # Permite rodar manualmente pelo botão "Run workflow"
+  workflow_dispatch:
 
-  workflow_dispatch:  # Permite rodar manualmente
+  # Agenda semanal (domingo 09:00 UTC). Ajuste para seu horário.
+  schedule:
+    - cron: "0 9 * * 0"
 
 permissions:
-  contents: write  # Necessário para fazer commit no repo
-
-# Impede que dois runs rodem ao mesmo tempo
-concurrency:
-  group: mega-image-generator
-  cancel-in-progress: false
+  # Necessário para fazer commit/push de arquivos gerados
+  contents: write
 
 jobs:
   generate-image:
     runs-on: ubuntu-latest
 
     steps:
-      # --------------------------------------------------------
-      # 1️⃣ Faz checkout do repositório
-      # --------------------------------------------------------
+      # 1) Baixa o repositório
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      # --------------------------------------------------------
-      # 2️⃣ Setup Python
-      # --------------------------------------------------------
+      # 2) Configura Python
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
-      # --------------------------------------------------------
-      # 3️⃣ Instala dependências necessárias
-      # --------------------------------------------------------
+      # 3) Instala dependências (SEM requirements.txt)
+      #    - pillow -> fornece o módulo PIL
+      #    - openai  -> SDK para gerar a imagem
       - name: Install dependencies
         run: |
-          pip install openai
+          python -m pip install --upgrade pip
+          pip install openai pillow
 
-      # --------------------------------------------------------
-      # 4️⃣ Executa o gerador de imagem
-      # Arquivo executado:
-      #    core/image_generator.py
-      # --------------------------------------------------------
+      # 4) Gera a imagem semanal
+      #    Atenção: OPENAI_API_KEY deve estar em Settings > Secrets and variables > Actions
       - name: Generate Mega weekly image
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           python core/image_generator.py
 
-      # --------------------------------------------------------
-      # 5️⃣ Commit da imagem gerada (se houver mudança)
-      # Pasta afetada:
-      #    out/images/
-      # --------------------------------------------------------
+      # 5) Faz commit e push se algum arquivo mudou (ex: out/images/...)
+      #    Importante: não falhar se não houver mudanças.
       - name: Commit image (if changed)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add out/images/
+          # Mostra status para debug
+          git status
 
-          if ! git diff --cached --quiet; then
-            git commit -m "chore: weekly Mega image"
-            git push origin HEAD:main
-          else
+          # Se não tiver mudanças, sai sem erro
+          if git diff --quiet; then
             echo "No changes to commit."
+            exit 0
           fi
+
+          git add -A
+          git commit -m "chore: update weekly mega image"
+          git push
