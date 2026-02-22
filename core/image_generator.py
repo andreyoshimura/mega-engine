@@ -1,1 +1,1 @@
-// Gerador de imagem post
+# Gerador de imagem post
