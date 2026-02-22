@@ -28,8 +28,9 @@ Foco principal:
 > consistência operacional.
 
 ------------------------------------------------------------------------
-# ⚙️ Arquitetura
+## ⚙️ Arquitetura
 
+```bash
 mega-engine/
 ├── core/
 │   ├── generator.py              # Geração dos jogos
@@ -54,6 +55,7 @@ mega-engine/
     ├── daily_generate.yml        # Geração diária de jogos
     ├── compare_results.yml       # Comparação automática
     └── generate_images.yml       # Geração semanal de imagem
+```
 
 ------------------------------------------------------------------------
 
