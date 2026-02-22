@@ -1,15 +1,11 @@
 # 🎯 Mega Engine
 
-Motor estatístico automatizado para geração, avaliação, versionamento
-estratégico e publicação de jogos da Mega-Sena.
+Motor estatístico automatizado para geração, avaliação e versionamento
+de estratégias da Mega-Sena.
 
-O projeto não busca prever resultados, mas construir um sistema:
-
--   Auditável
--   Mensurável
--   Determinístico
--   Operacionalmente estável
--   Versionado
+O objetivo do projeto não é prever resultados, mas construir um sistema
+auditável, mensurável e evolutivo para geração de combinações com base
+estatística.
 
 ------------------------------------------------------------------------
 
@@ -23,60 +19,57 @@ Criar uma engine modular que:
 -   Preserve histórico cumulativo
 -   Versione automaticamente cada estratégia utilizada
 -   Gere imagens institucionais automaticamente
--   Integre com automações (n8n, Telegram, Instagram)
+-   Permita evolução futura com estatística avançada e Machine Learning
+-   Integre facilmente com automações (n8n, Telegram, redes sociais)
 
 Foco principal:
 
-> Maximizar qualidade estatística e medir desempenho real ao longo do
-> tempo.
+> Maximizar qualidade estatística, mensurar desempenho real e manter
+> consistência operacional.
 
 ------------------------------------------------------------------------
 
 # ⚙️ Arquitetura
 
-``` bash
-mega-engine/
-├── core/
-│   ├── generator.py              # Geração dos jogos
-│   ├── compare_results.py        # Comparação com resultado oficial
-│   ├── image_generator.py        # Geração automática de imagens (IA)
-│   ├── ingest_megasena.py        # Ingestão de resultados
-│   ├── features_megasena.py      # Engenharia de features
-│   ├── versioning.py             # Registro automático de estratégia
-│   ├── optimize.py               # (reservado)
-│   └── backtest.py               # (reservado)
-│
-├── configs/
-│   └── strategy_config.json      # Configuração ativa da estratégia
-│
-├── data/
-│   ├── performance_log.jsonl     # Histórico cumulativo (append-only)
-│   ├── model_history.jsonl       # Histórico de estratégias (append-only)
-│   └── last_result.json          # Último resultado oficial
-│
-├── out/
-│   ├── jogos_gerados.json        # Jogos do dia (sobrescrito)
-│   └── images/
-│       ├── mega_atual.png        # Imagem usada na automação
-│       └── mega_semana_X.png     # Histórico semanal versionado
-│
-└── .github/workflows/
-    ├── daily_generate.yml
-    ├── compare_results.yml
-    └── generate_images.yml
-```
+    mega-engine/
+    ├── core/
+    │   ├── generator.py
+    │   ├── compare_results.py
+    │   ├── image_generator.py
+    │   ├── ingest_megasena.py
+    │   ├── features_megasena.py
+    │   └── versioning.py
+    │
+    ├── configs/
+    │   └── strategy_config.json
+    │
+    ├── data/
+    │   ├── performance_log.jsonl
+    │   ├── model_history.jsonl
+    │   └── last_result.json
+    │
+    ├── out/
+    │   ├── jogos_gerados.json
+    │   └── images/
+    │       ├── mega_atual.png
+    │       └── mega_semana_X.png
+    │
+    └── .github/workflows/
+        ├── daily_generate.yml
+        ├── compare_results.yml
+        └── generate_images.yml
 
 ------------------------------------------------------------------------
 
 # 🔄 Fluxo de Produção
 
-## 1️⃣ Daily Generate
+## Daily Generate Workflow
 
 Executa:
 
--   ingest_megasena.py\
--   features_megasena.py\
--   generator.py\
+-   ingest_megasena.py
+-   features_megasena.py
+-   generator.py
 -   register_strategy()
 
 Atualiza:
@@ -86,71 +79,16 @@ Atualiza:
 
 ------------------------------------------------------------------------
 
-## 2️⃣ Compare Results
+# 📊 Versionamento de Estratégia
 
--   Consulta API oficial
--   Calcula acertos
--   Atualiza:
-    -   data/last_result.json
-    -   data/performance_log.jsonl
+Cada execução registra:
 
-------------------------------------------------------------------------
-
-## 3️⃣ Image Workflow (IA)
-
-Executa:
-
--   image_generator.py
-
-Gera:
-
--   1024x1024 otimizado para Instagram
--   Tema visual rotativo por semana
--   Headline variável
--   Identidade institucional consistente
-
-Atualiza:
-
--   out/images/mega_atual.png (sempre sobrescreve)
--   out/images/mega_semana\_{ISO_WEEK}.png (histórico preservado)
-
-Commit automático apenas se houver alteração real.
-
-------------------------------------------------------------------------
-
-# 🖼️ Estratégia de Imagens
-
-Características:
-
--   Formato 1:1 (Instagram ready)
--   Tema rotativo semanal
--   Headline variável:
-    -   Análise de Padrões
-    -   Estratégia Numérica
-    -   Probabilidade Aplicada
--   Sem apelo a prêmio
--   Sem promessa
--   Sem linguagem de urgência
-
-Objetivo: posicionamento institucional e analítico.
-
-------------------------------------------------------------------------
-
-# 🧠 Versionamento de Estratégia (Implementado)
-
-Toda execução de produção registra automaticamente:
-
-``` json
-{
-  "timestamp": "...",
-  "execution_type": "production",
-  "strategy_name": "...",
-  "model_version": "...",
-  "parameters": {...},
-  "config_hash": "...",
-  "commit_sha": "..."
-}
-```
+-   strategy_name
+-   model_version
+-   parâmetros utilizados
+-   hash da configuração
+-   timestamp
+-   execution_type (production/backtest)
 
 Arquivo:
 
@@ -159,34 +97,9 @@ data/model_history.jsonl
 Garantias:
 
 -   Append-only
--   Não duplica hash
--   Resiliente a falhas
+-   Hash para evitar duplicidade
 -   Auditoria completa
--   Integração automática com GitHub Actions
-
-Validação realizada:
-
-✔ Configuração idêntica não duplica\
-✔ Configuração alterada gera novo registro\
-✔ Pipeline estável
-
-------------------------------------------------------------------------
-
-# 📊 Métricas Registradas
-
-Por concurso:
-
--   max_hits
--   count_ge4
--   count_ge5
--   count_eq6
--   score ponderado
--   histograma de distribuição
--   lista completa de jogos
-
-Arquivo:
-
-data/performance_log.jsonl
+-   Histórico versionado via Git
 
 ------------------------------------------------------------------------
 
@@ -201,34 +114,47 @@ data/performance_log.jsonl
 -   Ajuste Automático de Pesos
 -   Dashboard Simplificado de Performance
 
-## 🟣 Fase 3 --- Sistema Adaptativo
+------------------------------------------------------------------------
 
--   Estratégias múltiplas comparáveis
--   Otimização paramétrica automática
--   Modelo adaptativo baseado em performance
--   Guard contra regressão estatística
+## 🟣 Fase 3 --- Machine Learning Aplicado
+
+Objetivo: melhorar ranking probabilístico mantendo auditabilidade.
+
+Planejado:
+
+-   Feature engineering avançado (lags, frequência relativa, deltas)
+-   Modelos supervisionados para scoring de dezenas
+-   Ensemble entre modelo heurístico e modelo ML
+-   Validação walk-forward rigorosa (sem vazamento futuro)
+-   Monitoramento de estabilidade estatística
+-   Guard contra regressão de performance
+-   Registro versionado de modelos treinados
+-   Comparação padronizada entre estratégias
+
+Importante:
+
+O sistema não busca prever números, mas melhorar consistência
+estatística e mensuração de desempenho.
+
+------------------------------------------------------------------------
+
+# 🎛 Princípios do Projeto
+
+-   Estatística \> Achismo
+-   Métrica \> Intuição
+-   Histórico \> Memória manual
+-   Automação \> Operação manual
+-   Reprodutibilidade \> Aleatoriedade não controlada
 
 ------------------------------------------------------------------------
 
 # 📌 Status Atual
 
-✔ Geração automática funcional\
-✔ Comparação automática funcional\
-✔ Histórico cumulativo preservado\
-✔ Versionamento de estratégia implementado\
-✔ Automação de imagens via IA\
+✔ Pipeline automatizado funcional\
+✔ Versionamento de estratégia ativo\
+✔ Histórico auditável\
 ✔ Integração pronta para n8n\
-✔ Pipeline estável
+✔ Geração automática de imagens
 
-------------------------------------------------------------------------
-
-# ⚠️ Aviso
-
-A Mega-Sena é um sistema de probabilidade combinatória com sorteios
-independentes.
-
-Este projeto não promete previsão de resultados nem vantagem matemática
-garantida.
-
-O objetivo é construir um sistema estatístico auditável e
-operacionalmente consistente.
+Mega Engine --- Estatística aplicada, mensuração real e evolução
+controlada.
