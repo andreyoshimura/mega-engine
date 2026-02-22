@@ -1,14 +1,31 @@
 """
 ============================================================
-Mega-Engine — Image Generator (Versão sem Pillow)
+Mega-Engine — Image Generator (Mega-Sena)
 
-- Sem dependência de PIL
-- Sem aplicação automática de logo
-- Ultra seguro contra moderação
-- Apenas geração da arte base
+O que este script faz:
 
-Salva em:
-out/images/mega_semana_<NUMERO>.png
+1. Lê os jogos gerados em:
+   -> out/jogos_gerados.json
+
+2. Detecta automaticamente a semana do ano
+
+3. Escolhe um tema visual diferente baseado na semana
+   (rotação automática semanal)
+
+4. Gera uma imagem 1024x1024 via OpenAI (compatível com Instagram)
+
+5. Salva dois arquivos:
+   - Histórico:
+       out/images/mega_semana_<NUMERO_DA_SEMANA>.png
+   - Arquivo canônico (sempre sobrescreve):
+       out/images/mega_atual.png
+
+IMPORTANTE:
+- O n8n deve sempre usar mega_atual.png
+- O histórico semanal permanece salvo no repositório
+
+Requisitos:
+- Secret OPENAI_API_KEY configurado no GitHub Actions
 ============================================================
 """
 
@@ -19,6 +36,7 @@ from datetime import datetime
 from pathlib import Path
 from openai import OpenAI
 
+
 # ============================================================
 # CONFIGURAÇÕES
 # ============================================================
@@ -26,10 +44,16 @@ from openai import OpenAI
 OUTPUT_DIR = Path("out/images")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+api_key = os.environ.get("OPENAI_API_KEY")
+if not api_key:
+    raise ValueError("OPENAI_API_KEY não encontrada nas variáveis de ambiente.")
+
+client = OpenAI(api_key=api_key)
+
 
 # ============================================================
-# 1️⃣ LÊ JOGOS GERADOS
+# 1️⃣ LÊ ARQUIVO DE JOGOS GERADOS
+# Arquivo produzido por: core/generator.py
 # ============================================================
 
 with open("out/jogos_gerados.json", "r", encoding="utf-8") as f:
@@ -38,61 +62,45 @@ with open("out/jogos_gerados.json", "r", encoding="utf-8") as f:
 concurso = data.get("concurso", "")
 ticket_size = data.get("ticket_size", 6)
 
+
 # ============================================================
-# 2️⃣ DEFINE TEMA POR SEMANA
+# 2️⃣ DEFINIÇÃO DE TEMA AUTOMÁTICO (VARIA POR SEMANA)
 # ============================================================
 
 week = datetime.now().isocalendar().week
 
 themes = [
-    "modern emerald gradient, clean brazilian design",
-    "deep blue tech editorial, minimal and premium",
-    "dark purple premium, subtle neon highlights",
-    "green and navy corporate, high contrast soft lighting",
-    "teal and graphite modern, sleek analytical look",
-    "midnight blue interface vibe, minimal geometry"
+    "luxury gold premium",
+    "green energy modern",
+    "dark minimalistic black and green",
+    "neon futuristic digital",
+    "explosion of money vibrant",
+    "tech blue digital interface"
 ]
 
 theme = themes[week % len(themes)]
 
+
 # ============================================================
-# 3️⃣ PROMPT ULTRA SEGURO
+# 3️⃣ PROMPT DINÂMICO
+# Se quiser alterar estilo visual, modifique apenas esta seção
 # ============================================================
 
 prompt = f"""
-Create a 1024x1024 Instagram image.
-
-Style: modern clean cartoon, sophisticated marketing look.
-Visual theme: {theme}.
-
-Main concept: statistical analysis of numerical patterns.
-
-Include:
-- A smart cartoon analyst mascot wearing glasses
-- Holding a tablet with organized numbers
-- Subtle charts and trend lines
-- Floating numbers connected by thin lines
-- Clean minimal composition
-- Soft high contrast lighting
-
-Text (choose only one):
-"Análise de Padrões"
-or
-"Estratégia Numérica"
-or
-"Probabilidade Aplicada"
-
-Restrictions:
-- No money
-- No prizes
-- No lottery machines
-- No celebration
-- No gambling references
-- No urgency tone
+Instagram post 1024x1024 for Mega-Sena lottery.
+Theme: {theme}.
+Modern Brazilian design.
+Floating lottery balls.
+High contrast lighting.
+Professional marketing look.
+Clean composition.
+No excessive text.
+Only small subtle 'Mega-Sena'.
 """
 
+
 # ============================================================
-# 4️⃣ GERA IMAGEM
+# 4️⃣ GERAÇÃO DA IMAGEM
 # ============================================================
 
 result = client.images.generate(
@@ -104,13 +112,20 @@ result = client.images.generate(
 image_base64 = result.data[0].b64_json
 image_bytes = base64.b64decode(image_base64)
 
+
 # ============================================================
-# 5️⃣ SALVA IMAGEM
+# 5️⃣ SALVA IMAGEM (HISTÓRICO + ATUAL)
 # ============================================================
 
-filename = OUTPUT_DIR / f"mega_semana_{week}.png"
-
-with open(filename, "wb") as img_file:
+# Histórico semanal
+weekly_filename = OUTPUT_DIR / f"mega_semana_{week}.png"
+with open(weekly_filename, "wb") as img_file:
     img_file.write(image_bytes)
 
-print(f"✅ Image generated successfully: {filename}")
+# Arquivo canônico (sempre sobrescreve)
+current_filename = OUTPUT_DIR / "mega_atual.png"
+with open(current_filename, "wb") as img_file:
+    img_file.write(image_bytes)
+
+print(f"✅ Weekly image generated: {weekly_filename}")
+print(f"✅ Current image updated: {current_filename}")
