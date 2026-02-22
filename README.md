@@ -1,12 +1,12 @@
 # 🎯 Mega Engine
 
-Motor estatístico automatizado para geração, avaliação e publicação
-estratégica de jogos da Mega-Sena.
+Motor estatístico automatizado para geração, avaliação, versionamento
+estratégico e publicação de jogos da Mega-Sena.
 
 O objetivo do projeto não é prever resultados, mas construir um sistema
-auditável, mensurável e evolutivo para geração de combinações com base
-estatística, mantendo histórico completo de performance e identidade
-visual automatizada.
+auditável, mensurável e operacionalmente estável para geração de
+combinações com base estatística, mantendo histórico completo de
+performance e de estratégia utilizada.
 
 ------------------------------------------------------------------------
 
@@ -18,8 +18,8 @@ Criar uma engine modular que:
 -   Registre resultados oficiais automaticamente
 -   Calcule acertos por concurso
 -   Preserve histórico cumulativo
+-   Versione automaticamente cada estratégia utilizada
 -   Gere imagens institucionais automaticamente
--   Permita evolução futura com otimização e ML
 -   Integre facilmente com automações (n8n, Telegram, redes sociais)
 
 Foco principal:
@@ -28,125 +28,93 @@ Foco principal:
 > consistência operacional.
 
 ------------------------------------------------------------------------
-## ⚙️ Arquitetura
 
-```bash
-mega-engine/
-├── core/
-│   ├── generator.py              # Geração dos jogos
-│   ├── compare_results.py        # Comparação com resultado oficial
-│   ├── image_generator.py        # Geração automática de imagens (IA)
-│   ├── ingest_megasena.py        # Ingestão de resultados
-│   ├── features_megasena.py      # Engenharia de features
-│   ├── optimize.py               # Otimização (futuro)
-│   └── backtest.py               # Backtests (futuro)
-│
-├── data/
-│   ├── performance_log.jsonl     # Histórico cumulativo (append-only)
-│   └── last_result.json          # Último resultado oficial
-│
-├── out/
-│   ├── jogos_gerados.json        # Jogos do dia (sobrescrito)
-│   └── images/
-│       ├── mega_atual.png        # Imagem usada na automação
-│       └── mega_semana_X.png     # Histórico semanal versionado
-│
-└── .github/workflows/
-    ├── daily_generate.yml        # Geração diária de jogos
-    ├── compare_results.yml       # Comparação automática
-    └── generate_images.yml       # Geração semanal de imagem
-```
+# ⚙️ Arquitetura
+
+mega-engine/ ├── core/ │ ├── generator.py │ ├── compare_results.py │ ├──
+image_generator.py │ ├── ingest_megasena.py │ ├── features_megasena.py │
+├── versioning.py │ ├── optimize.py │ └── backtest.py │ ├── configs/ │
+└── strategy_config.json │ ├── data/ │ ├── performance_log.jsonl │ ├──
+model_history.jsonl │ └── last_result.json │ ├── out/ │ ├──
+jogos_gerados.json │ └── images/ │ ├── mega_atual.png │ └──
+mega_semana_X.png │ └── .github/workflows/ ├── daily_generate.yml ├──
+compare_results.yml └── generate_images.yml
 
 ------------------------------------------------------------------------
 
 # 🔄 Fluxo de Produção
 
-## 1️⃣ Generate Workflow
+## Daily Generate Workflow
 
--   Executa `generator.py`
--   Gera jogos do dia
--   Atualiza `out/jogos_gerados.json`
+Executa:
 
-## 2️⃣ Compare Workflow
+-   ingest_megasena.py
+-   features_megasena.py
+-   generator.py
+-   register_strategy()
 
--   Consulta API oficial da Mega-Sena
--   Executa `compare_results.py`
--   Calcula acertos
--   Atualiza:
-    -   `data/last_result.json`
-    -   `data/performance_log.jsonl`
+Atualiza:
 
-## 3️⃣ Image Workflow (IA)
-
--   Executa `image_generator.py`
--   Gera imagem 1024x1024 pronta para Instagram
--   Atualiza sempre:
-    -   `out/images/mega_atual.png`
--   Mantém histórico semanal:
-    -   `out/images/mega_semana_{semana_iso}.png`
--   Commit automático apenas se houver alteração real
-
-## 4️⃣ Automação Externa (n8n)
-
-Consome via `raw.githubusercontent.com`: - Jogos do dia - Resultado
-oficial - Performance do concurso - Imagem atual institucional
+-   out/jogos_gerados.json
+-   data/model_history.jsonl
 
 ------------------------------------------------------------------------
 
-# 🖼️ Automação de Imagens
+## Compare Workflow
 
-O sistema gera automaticamente uma arte institucional semanal para a
-Mega-Sena.
+Atualiza:
 
-### Estratégia Visual
+-   data/last_result.json
+-   data/performance_log.jsonl
 
--   Formato 1024x1024 (ideal para Instagram)
--   Tema visual rotativo por semana
--   Headline variada automaticamente
--   Estética analítica e institucional
--   Identidade visual consistente
+------------------------------------------------------------------------
 
-### Arquivos Gerados
+## Image Workflow
 
-out/images/mega_atual.png\
-out/images/mega_semana_X.png
+Gera:
+
+-   out/images/mega_atual.png
+-   out/images/mega_semana_X.png
+
+------------------------------------------------------------------------
+
+# 🧠 Versionamento de Estratégia
+
+Cada execução registra:
+
+-   timestamp
+-   execution_type
+-   strategy_name
+-   model_version
+-   parameters
+-   config_hash
+-   commit_sha
+
+Arquivo:
+
+data/model_history.jsonl
+
+Garantias:
+
+-   Append-only
+-   Sem duplicação de hash
+-   Registro automático via GitHub Actions
+-   Auditoria rastreável
 
 ------------------------------------------------------------------------
 
 # 📊 Métricas Registradas
 
-Para cada concurso: - max_hits - count_ge4 - count_ge5 - count_eq6 -
-score ponderado - Histograma de distribuição de acertos - Lista completa
-de jogos com hits individuais
+-   max_hits
+-   count_ge4
+-   count_ge5
+-   count_eq6
+-   score ponderado
+-   histograma de distribuição
 
-------------------------------------------------------------------------
+Arquivo:
 
-# 🔐 Preservação de Histórico
-
--   performance_log.jsonl é append-only
--   Não há sobrescrita de concursos anteriores
--   Histórico versionado pelo Git
--   Auditoria completa e rastreável
-
-------------------------------------------------------------------------
-
-# 🚀 Roadmap
-
-## Fase 2
-
--   Backtest Walk-Forward Automatizado
--   Módulo de Pesos Ajustáveis
--   Penalização de Pares Fracos
--   Diversidade Entre Jogos
--   Ajuste Automático de Pesos
--   Versionamento de Estratégia - Finish (pendente atualizar readme)
--   Dashboard Simplificado
-
-## Fase 3
-
--   Otimização Paramétrica Automática
--   Estratégias Múltiplas Comparáveis
--   Modelo Adaptativo baseado em Performance
+data/performance_log.jsonl
 
 ------------------------------------------------------------------------
 
@@ -154,10 +122,10 @@ de jogos com hits individuais
 
 ✔ Geração automática funcional\
 ✔ Comparação automática funcional\
-✔ Histórico preservado\
+✔ Histórico cumulativo preservado\
+✔ Versionamento de estratégia implementado e validado\
 ✔ Automação de imagens via IA\
-✔ Integração pronta para n8n\
-✔ Arquitetura modular
+✔ Pipeline estável
 
 ------------------------------------------------------------------------
 
@@ -165,6 +133,3 @@ de jogos com hits individuais
 
 Este projeto não promete previsão de resultados nem vantagem matemática
 garantida.
-
-Mega Engine --- Estatística aplicada, mensuração real e evolução
-contínua.
