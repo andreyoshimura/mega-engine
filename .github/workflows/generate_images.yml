@@ -1,15 +1,15 @@
 name: Generate Weekly Mega Image
 
 on:
-  # Permite rodar manualmente pelo botão "Run workflow"
+  # Rodar manualmente pelo botão "Run workflow"
   workflow_dispatch:
 
-  # Agenda semanal (domingo 09:00 UTC). Ajuste para seu horário.
+  # Rodar semanalmente (domingo 09:00 UTC)
   schedule:
     - cron: "0 9 * * 0"
 
 permissions:
-  # Necessário para fazer commit/push de arquivos gerados
+  # Necessário para commitar e dar push no repositório
   contents: write
 
 jobs:
@@ -17,44 +17,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) Baixa o repositório
+      # 1) Baixa o repositório para o runner
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2) Configura Python
+      # 2) Configura Python (SEM cache pip, porque você não tem requirements.txt/pyproject.toml)
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: "pip"
 
-      # 3) Instala dependências (SEM requirements.txt)
-      #    - pillow -> fornece o módulo PIL
+      # 3) Instala dependências necessárias
+      #    - pillow -> fornece PIL (resolve o erro do módulo)
       #    - openai  -> SDK para gerar a imagem
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install openai pillow
 
-      # 4) Gera a imagem semanal
-      #    Atenção: OPENAI_API_KEY deve estar em Settings > Secrets and variables > Actions
+      # 4) Executa o script gerador
+      #    IMPORTANTE: crie o secret OPENAI_API_KEY no GitHub
       - name: Generate Mega weekly image
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           python core/image_generator.py
 
-      # 5) Faz commit e push se algum arquivo mudou (ex: out/images/...)
-      #    Importante: não falhar se não houver mudanças.
+      # 5) Commit/push somente se houver mudanças (ex.: nova imagem em out/images)
       - name: Commit image (if changed)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Mostra status para debug
-          git status
-
-          # Se não tiver mudanças, sai sem erro
+          # Se não houver mudanças, encerra com sucesso
           if git diff --quiet; then
             echo "No changes to commit."
             exit 0
