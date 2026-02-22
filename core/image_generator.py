@@ -80,7 +80,7 @@ theme = themes[week % len(themes)]
 # ============================================================
 
 prompt = f"""
-Instagram post 1080x1080 for Mega-Sena lottery.
+Instagram post 1024x1024 for Mega-Sena lottery.
 Theme: {theme}.
 Modern Brazilian design.
 Floating lottery balls.
