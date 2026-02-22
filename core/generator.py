@@ -139,7 +139,11 @@ def export_json(games: list[list[int]]) -> None:
     with OUT_PATH.open("w", encoding="utf-8") as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
 
-
 if __name__ == "__main__":
+    with open("configs/strategy_config.json", "r", encoding="utf-8") as f:
+        config = json.load(f)
+
     games = generate_games()
     export_json(games)
+
+    register_strategy(config, execution_type="production")
