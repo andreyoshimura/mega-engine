@@ -1,32 +1,12 @@
 """
-============================================================
 Mega-Engine — Image Generator (Mega-Sena)
 
-O que este script faz:
+Versão Blindada:
 
-1. Lê os jogos gerados em:
-   -> out/jogos_gerados.json
-
-2. Detecta automaticamente a semana do ano
-
-3. Escolhe um tema visual diferente baseado na semana
-   (rotação automática semanal)
-
-4. Gera uma imagem 1024x1024 via OpenAI (compatível com Instagram)
-
-5. Salva dois arquivos:
-   - Histórico:
-       out/images/mega_semana_<NUMERO_DA_SEMANA>.png
-   - Arquivo canônico (sempre sobrescreve):
-       out/images/mega_atual.png
-
-IMPORTANTE:
-- O n8n deve sempre usar mega_atual.png
-- O histórico semanal permanece salvo no repositório
-
-Requisitos:
-- Secret OPENAI_API_KEY configurado no GitHub Actions
-============================================================
+✔ Gera imagem semanal apenas se não existir
+✔ Sempre atualiza mega_atual.png
+✔ Evita inconsistência entre histórico e atual
+✔ Seguro para múltiplas execuções na mesma semana
 """
 
 import os
@@ -38,7 +18,7 @@ from openai import OpenAI
 
 
 # ============================================================
-# CONFIGURAÇÕES
+# CONFIG
 # ============================================================
 
 OUTPUT_DIR = Path("out/images")
@@ -46,14 +26,13 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 api_key = os.environ.get("OPENAI_API_KEY")
 if not api_key:
-    raise ValueError("OPENAI_API_KEY não encontrada nas variáveis de ambiente.")
+    raise ValueError("OPENAI_API_KEY não encontrada.")
 
 client = OpenAI(api_key=api_key)
 
 
 # ============================================================
-# 1️⃣ LÊ ARQUIVO DE JOGOS GERADOS
-# Arquivo produzido por: core/generator.py
+# LOAD DATA
 # ============================================================
 
 with open("out/jogos_gerados.json", "r", encoding="utf-8") as f:
@@ -64,10 +43,25 @@ ticket_size = data.get("ticket_size", 6)
 
 
 # ============================================================
-# 2️⃣ DEFINIÇÃO DE TEMA AUTOMÁTICO (VARIA POR SEMANA)
+# WEEK LOGIC
 # ============================================================
 
 week = datetime.now().isocalendar().week
+weekly_filename = OUTPUT_DIR / f"mega_semana_{week}.png"
+current_filename = OUTPUT_DIR / "mega_atual.png"
+
+
+# ============================================================
+# SE JÁ EXISTE IMAGEM DA SEMANA
+# NÃO REGERA HISTÓRICO
+# ============================================================
+
+generate_weekly = not weekly_filename.exists()
+
+
+# ============================================================
+# THEME VARIATION
+# ============================================================
 
 themes = [
     "luxury gold premium",
@@ -82,8 +76,7 @@ theme = themes[week % len(themes)]
 
 
 # ============================================================
-# 3️⃣ PROMPT DINÂMICO
-# Se quiser alterar estilo visual, modifique apenas esta seção
+# PROMPT
 # ============================================================
 
 prompt = f"""
@@ -100,7 +93,7 @@ Only small subtle 'Mega-Sena'.
 
 
 # ============================================================
-# 4️⃣ GERAÇÃO DA IMAGEM
+# GENERATE IMAGE
 # ============================================================
 
 result = client.images.generate(
@@ -114,18 +107,19 @@ image_bytes = base64.b64decode(image_base64)
 
 
 # ============================================================
-# 5️⃣ SALVA IMAGEM (HISTÓRICO + ATUAL)
+# SAVE FILES
 # ============================================================
 
-# Histórico semanal
-weekly_filename = OUTPUT_DIR / f"mega_semana_{week}.png"
-with open(weekly_filename, "wb") as img_file:
-    img_file.write(image_bytes)
-
-# Arquivo canônico (sempre sobrescreve)
-current_filename = OUTPUT_DIR / "mega_atual.png"
+# 1️⃣ Atual sempre sobrescreve
 with open(current_filename, "wb") as img_file:
     img_file.write(image_bytes)
 
-print(f"✅ Weekly image generated: {weekly_filename}")
-print(f"✅ Current image updated: {current_filename}")
+print(f"✅ mega_atual.png atualizado")
+
+# 2️⃣ Histórico semanal só cria se não existir
+if generate_weekly:
+    with open(weekly_filename, "wb") as img_file:
+        img_file.write(image_bytes)
+    print(f"✅ mega_semana_{week}.png criado")
+else:
+    print(f"ℹ️ mega_semana_{week}.png já existe — histórico preservado")
