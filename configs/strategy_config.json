@@ -1,6 +1,6 @@
 {
   "strategy_name": "megasena_v1",
-  "model_version": "1.0.0",
+  "model_version": "1.0.1",
   "parameters": {
     "ticket_size": 9,
     "num_games": 5
