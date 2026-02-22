@@ -9,12 +9,13 @@ permissions:
   contents: write
 
 concurrency:
-  group: daily-generate-main
+  group: mega-daily-main
   cancel-in-progress: false
 
 jobs:
   run:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,28 +29,28 @@ jobs:
         run: |
           pip install pandas numpy requests
 
+      # 🔹 Sempre sincroniza antes de gerar
+      - name: Sync with remote
+        run: |
+          git pull --rebase origin main
+
       - name: Ingest + Features + Generate
         run: |
           python core/ingest_megasena.py
           python core/features_megasena.py
           python core/generator.py
 
-      - name: Commit artifacts (if changed)
+      - name: Commit artifacts (safe)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add out/jogos_gerados.json
-          git add data/results/megasena.csv
-          git add data/features/dezenas.csv
+          git add -A
 
-          if [ -d "out/history" ]; then
-            git add out/history
+          # Só commita se houver mudanças
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update mega artifacts"
+            git push origin HEAD:main
+          else
+            echo "No changes to commit."
           fi
-
-          # só commita se tiver mudanças
-          git diff --cached --quiet || git commit -m "chore: update mega artifacts"
-
-          # sincroniza com remoto para evitar "rejected (fetch first)"
-          git pull --rebase origin main
-          git push origin HEAD:main
