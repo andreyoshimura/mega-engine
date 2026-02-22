@@ -7,11 +7,13 @@ Versão Blindada:
 ✔ Sempre atualiza mega_atual.png
 ✔ Evita inconsistência entre histórico e atual
 ✔ Seguro para múltiplas execuções na mesma semana
+✔ Prompt institucional estratégico (sem apelo a aposta)
 """
 
 import os
 import json
 import base64
+import random
 from datetime import datetime
 from pathlib import Path
 from openai import OpenAI
@@ -50,12 +52,6 @@ week = datetime.now().isocalendar().week
 weekly_filename = OUTPUT_DIR / f"mega_semana_{week}.png"
 current_filename = OUTPUT_DIR / "mega_atual.png"
 
-
-# ============================================================
-# SE JÁ EXISTE IMAGEM DA SEMANA
-# NÃO REGERA HISTÓRICO
-# ============================================================
-
 generate_weekly = not weekly_filename.exists()
 
 
@@ -68,7 +64,7 @@ themes = [
     "green energy modern",
     "dark minimalistic black and green",
     "neon futuristic digital",
-    "explosion of money vibrant",
+    "deep emerald sophisticated",
     "tech blue digital interface"
 ]
 
@@ -76,19 +72,55 @@ theme = themes[week % len(themes)]
 
 
 # ============================================================
-# PROMPT
+# HEADLINE VARIATION
+# ============================================================
+
+headline_options = [
+    "Análise de Padrões",
+    "Estratégia Numérica",
+    "Probabilidade Aplicada"
+]
+
+headline = random.choice(headline_options)
+
+
+# ============================================================
+# PROMPT INSTITUCIONAL
 # ============================================================
 
 prompt = f"""
-Instagram post 1024x1024 for Mega-Sena lottery.
-Theme: {theme}.
-Modern Brazilian design.
-Floating lottery balls.
-High contrast lighting.
-Professional marketing look.
-Clean composition.
-No excessive text.
-Only small subtle 'Mega-Sena'.
+Create a 1024x1024 Instagram image.
+
+Style: modern clean cartoon, sophisticated marketing look.
+Visual theme: {theme}.
+
+Main concept: statistical analysis of numerical patterns for Mega-Sena.
+
+Include:
+- A smart cartoon analyst mascot wearing glasses
+- Holding a tablet with organized numbers
+- Subtle charts and trend lines in background
+- Floating numbers connected by thin lines
+- Clean minimal composition
+- Soft high contrast lighting
+
+Main headline:
+"{headline}"
+
+Footer requirement:
+- Write the word: Mega-Sena
+- Place it small in the bottom center
+- Subtle, clean typography
+- Not dominant
+- Integrated into the design
+
+Restrictions:
+- No money
+- No prizes
+- No lottery machines
+- No celebration
+- No gambling references
+- No urgency tone
 """
 
 
@@ -110,13 +142,13 @@ image_bytes = base64.b64decode(image_base64)
 # SAVE FILES
 # ============================================================
 
-# 1️⃣ Atual sempre sobrescreve
+# Sempre atualiza mega_atual.png
 with open(current_filename, "wb") as img_file:
     img_file.write(image_bytes)
 
-print(f"✅ mega_atual.png atualizado")
+print("✅ mega_atual.png atualizado")
 
-# 2️⃣ Histórico semanal só cria se não existir
+# Histórico semanal preservado
 if generate_weekly:
     with open(weekly_filename, "wb") as img_file:
         img_file.write(image_bytes)
