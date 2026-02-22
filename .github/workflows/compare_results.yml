@@ -3,7 +3,7 @@ name: Compare Mega-Sena Results
 on:
   # Roda automaticamente quando o workflow de geração terminar com sucesso
   workflow_run:
-    workflows: ["Daily Generate Mega-Sena JSON"]
+    workflows: ["Mega Daily Generate"]
     types: [completed]
 
   # Mantém também execução manual e agendada (fallback)
