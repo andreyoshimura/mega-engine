@@ -139,7 +139,7 @@ de jogos com hits individuais
 -   Penalização de Pares Fracos
 -   Diversidade Entre Jogos
 -   Ajuste Automático de Pesos
--   Versionamento de Estratégia
+-   Versionamento de Estratégia - running
 -   Dashboard Simplificado
 
 ## Fase 3
