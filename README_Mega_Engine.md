@@ -28,15 +28,32 @@ Foco principal:
 > consistência operacional.
 
 ------------------------------------------------------------------------
-
 # ⚙️ Arquitetura
 
-mega-engine/ │ ├── core/ │ ├── generator.py │ ├── compare_results.py │
-├── image_generator.py │ └── backtest.py (futuro) │ ├── out/ │ ├──
-jogos_gerados.json │ └── images/ │ ├── mega_atual.png │ └──
-mega_semana_X.png │ ├── data/ │ ├── performance_log.jsonl │ └──
-last_result.json │ └── .github/workflows/ ├── generate.yml ├──
-compare_results.yml └── generate_images.yml
+mega-engine/
+├── core/
+│   ├── generator.py              # Geração dos jogos
+│   ├── compare_results.py        # Comparação com resultado oficial
+│   ├── image_generator.py        # Geração automática de imagens (IA)
+│   ├── ingest_megasena.py        # Ingestão de resultados
+│   ├── features_megasena.py      # Engenharia de features
+│   ├── optimize.py               # Otimização (futuro)
+│   └── backtest.py               # Backtests (futuro)
+│
+├── data/
+│   ├── performance_log.jsonl     # Histórico cumulativo (append-only)
+│   └── last_result.json          # Último resultado oficial
+│
+├── out/
+│   ├── jogos_gerados.json        # Jogos do dia (sobrescrito)
+│   └── images/
+│       ├── mega_atual.png        # Imagem usada na automação
+│       └── mega_semana_X.png     # Histórico semanal versionado
+│
+└── .github/workflows/
+    ├── daily_generate.yml        # Geração diária de jogos
+    ├── compare_results.yml       # Comparação automática
+    └── generate_images.yml       # Geração semanal de imagem
 
 ------------------------------------------------------------------------
 
