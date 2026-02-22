@@ -99,7 +99,7 @@ Only small subtle 'Mega-Sena'.
 result = client.images.generate(
     model="gpt-image-1",
     prompt=prompt,
-    size="1080x1080"
+    size="1024x1024"
 )
 
 image_base64 = result.data[0].b64_json
