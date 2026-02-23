@@ -9,7 +9,7 @@ on:
   # Mantém também execução manual e agendada (fallback)
   workflow_dispatch:
   schedule:
-    - cron: "10 1 * * *" # diário (UTC)
+    - ron: "0 23 * * 2,4,6"  # diário (UTC)
 
 permissions:
   contents: write
