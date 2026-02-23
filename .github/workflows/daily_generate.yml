@@ -3,7 +3,7 @@ name: Mega Daily Generate
 on:
   # 🔹 Execução automática diária (UTC)
   schedule:
-    - cron: "15 10 * * *"
+    - cron: "30 1 * * 2,4,6"
 
   # 🔹 Permite execução manual pelo botão
   workflow_dispatch:
