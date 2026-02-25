@@ -3,7 +3,7 @@ name: Mega Daily Generate
 on:
   # Execução automática diária (UTC)
   schedule:
-    - cron: "0 8 * * *"  # 07:15 Brasil (BRT)
+    - cron: "0 8 * * *"  # 08:00 Brasil (BRT)
 
   # Permite rodar manualmente
   workflow_dispatch:
