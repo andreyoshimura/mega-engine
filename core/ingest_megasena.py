@@ -1,45 +1,53 @@
+"""
+Mega-Engine — Ingest Mega-Sena (API Oficial)
+
+Fonte única da verdade:
+API oficial da Caixa.
+
+Remove completamente dependência da API heroku atrasada.
+"""
+
 import json
 import requests
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
+
+# ============================================================
+# PATHS
+# ============================================================
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LAST_RESULT_PATH = REPO_ROOT / "data" / "last_result.json"
 
-HEROKU_API = "https://loteriascaixa-api.herokuapp.com/api/megasena/latest"
+# ============================================================
+# API OFICIAL DA CAIXA
+# ============================================================
+
 CAIXA_API = "https://servicebus2.caixa.gov.br/portaldeloterias/api/megasena"
 
+HEADERS = {
+    "User-Agent": "mega-engine/1.0",
+    "Accept": "application/json",
+}
 
-def fetch_heroku():
-    try:
-        r = requests.get(HEROKU_API, timeout=10)
-        r.raise_for_status()
-        data = r.json()
-
-        return {
-            "concurso": int(data["concurso"]),
-            "data": data["data"],
-            "dezenas": [int(d) for d in data["dezenas"]],
-        }
-
-    except Exception:
-        return None
-
+# ============================================================
+# FUNÇÕES
+# ============================================================
 
 def fetch_caixa():
-    try:
-        r = requests.get(CAIXA_API, timeout=10)
-        r.raise_for_status()
-        data = r.json()
+    """
+    Busca o último concurso na API oficial da Caixa.
+    """
+    r = requests.get(CAIXA_API, headers=HEADERS, timeout=30)
+    r.raise_for_status()
 
-        return {
-            "concurso": int(data["numero"]),
-            "data": data["dataApuracao"],
-            "dezenas": [int(d) for d in data["listaDezenas"]],
-        }
+    data = r.json()
 
-    except Exception:
-        return None
+    return {
+        "concurso": int(data["numero"]),
+        "data": data["dataApuracao"],
+        "dezenas": sorted(int(d) for d in data["listaDezenas"]),
+    }
 
 
 def load_last_concurso():
@@ -52,27 +60,27 @@ def load_last_concurso():
 
 
 def save_result(result):
-    result["fetched_at_utc"] = datetime.utcnow().isoformat()
+    result["fetched_at_utc"] = datetime.now(timezone.utc).isoformat()
 
     LAST_RESULT_PATH.parent.mkdir(parents=True, exist_ok=True)
+
     with LAST_RESULT_PATH.open("w", encoding="utf-8") as f:
         json.dump(result, f, indent=2, ensure_ascii=False)
 
 
+# ============================================================
+# MAIN
+# ============================================================
+
 if __name__ == "__main__":
+
     last_concurso = load_last_concurso()
 
-    heroku_data = fetch_heroku()
-    caixa_data = fetch_caixa()
-
-    candidates = [d for d in [heroku_data, caixa_data] if d]
-
-    if not candidates:
-        print("❌ Nenhuma API respondeu.")
-        exit(1)
-
-    # escolhe maior concurso disponível
-    latest = max(candidates, key=lambda x: x["concurso"])
+    try:
+        latest = fetch_caixa()
+    except Exception as e:
+        print(f"❌ Falha ao consultar API oficial da Caixa: {e}")
+        raise SystemExit(1)
 
     if latest["concurso"] > last_concurso:
         save_result(latest)
