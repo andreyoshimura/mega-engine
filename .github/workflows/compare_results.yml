@@ -9,9 +9,9 @@ on:
   # Execução manual (fallback)
   workflow_dispatch:
 
-  # Fallback agendado diário (UTC)
+   # Agendamento de fallback: 23:00 BRT nas quartas, sextas e domingos
   schedule:
-    - cron: "10 1 * * *"  # 22:10 Brasil (dia anterior)
+    - cron: "0 2 * * 3,5,0"
 
 permissions:
   contents: write
