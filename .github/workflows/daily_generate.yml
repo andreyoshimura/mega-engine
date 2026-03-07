@@ -1,6 +1,7 @@
 name: Mega Daily Generate
 
-schedule:
+on:
+  schedule:
     - cron: "0 6 * * 2,4,6"  # 03:00 AM Brasil (BRT) às Terças, Quintas e Sábados
     
   # Permite rodar manualmente
