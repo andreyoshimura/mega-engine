@@ -1,156 +1,130 @@
 """
-Mega-Engine — Ingest Mega-Sena (API Oficial)
-
-Responsável por:
-1. Consultar o último resultado da Mega-Sena na API oficial da Caixa
-2. Atualizar data/last_result.json
-3. Atualizar o histórico data/results/megasena.csv
-4. Evitar duplicação de concursos
-
-Este script é executado pelo GitHub Actions diariamente.
+Mega-Engine
+Ingest Mega-Sena com fallback inteligente
 
 Fluxo:
-API Caixa → ingest_megasena.py → last_result.json + megasena.csv
+
+1) consulta API oficial da Caixa
+2) verifica último concurso salvo no CSV
+3) se houver concursos faltando:
+      usa API histórica alternativa
+4) atualiza:
+      data/results/megasena.csv
+      data/last_result.json
+
+Isso evita:
+- pular concursos
+- depender de API instável
 """
 
-import json
-import csv
 import requests
+import csv
+import json
 from pathlib import Path
 from datetime import datetime, timezone
 
 
-# ============================================================
-# PATHS DO REPOSITÓRIO
-# ============================================================
+# --------------------------------------------------
+# PATHS
+# --------------------------------------------------
 
-# Detecta automaticamente a raiz do repositório
-REPO_ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
 
-# Arquivo que guarda apenas o último resultado
-LAST_RESULT_PATH = REPO_ROOT / "data" / "last_result.json"
-
-# Arquivo histórico com todos os concursos
-CSV_HISTORY_PATH = REPO_ROOT / "data" / "results" / "megasena.csv"
+CSV_PATH = ROOT / "data" / "results" / "megasena.csv"
+LAST_JSON = ROOT / "data" / "last_result.json"
 
 
-# ============================================================
-# API OFICIAL DA CAIXA
-# ============================================================
+# --------------------------------------------------
+# APIS
+# --------------------------------------------------
 
-CAIXA_API = "https://servicebus2.caixa.gov.br/portaldeloterias/api/megasena"
+API_CAIXA = "https://servicebus2.caixa.gov.br/portaldeloterias/api/megasena"
 
-HEADERS = {
-    "User-Agent": "mega-engine/1.0",
-    "Accept": "application/json",
-}
+API_HISTORICO = "https://loteriascaixa-api.herokuapp.com/api/megasena"
 
 
-# ============================================================
-# FUNÇÃO: CONSULTAR API OFICIAL
-# ============================================================
+# --------------------------------------------------
+# LER CSV
+# --------------------------------------------------
 
-def fetch_caixa():
-    """
-    Consulta a API oficial da Caixa e retorna
-    o último resultado disponível.
-    """
+def read_existing():
 
-    response = requests.get(
-        CAIXA_API,
-        headers=HEADERS,
-        timeout=30
-    )
+    concursos = []
 
-    response.raise_for_status()
+    if not CSV_PATH.exists():
+        return concursos
 
-    data = response.json()
+    with open(CSV_PATH) as f:
+
+        reader = csv.reader(f)
+
+        for row in reader:
+
+            try:
+                concursos.append(int(row[0]))
+            except:
+                pass
+
+    return concursos
+
+
+# --------------------------------------------------
+# CONSULTAR API CAIXA
+# --------------------------------------------------
+
+def fetch_latest_caixa():
+
+    print("Consultando API oficial da Caixa...")
+
+    r = requests.get(API_CAIXA)
+
+    r.raise_for_status()
+
+    data = r.json()
+
+    dezenas = sorted(int(d) for d in data["listaDezenas"])
 
     return {
         "concurso": int(data["numero"]),
         "data": data["dataApuracao"],
-        "dezenas": sorted(int(d) for d in data["listaDezenas"]),
+        "dezenas": dezenas
     }
 
 
-# ============================================================
-# FUNÇÃO: LER ÚLTIMO CONCURSO REGISTRADO
-# ============================================================
+# --------------------------------------------------
+# CONSULTAR HISTÓRICO COMPLETO
+# --------------------------------------------------
 
-def load_last_concurso():
-    """
-    Lê o arquivo last_result.json
-    para descobrir qual foi o último concurso salvo.
-    """
+def fetch_history():
 
-    if not LAST_RESULT_PATH.exists():
-        return 0
+    print("Consultando API histórica (fallback)...")
 
-    with LAST_RESULT_PATH.open("r", encoding="utf-8") as f:
-        data = json.load(f)
-        return int(data.get("concurso", 0))
+    r = requests.get(API_HISTORICO)
 
+    r.raise_for_status()
 
-# ============================================================
-# FUNÇÃO: SALVAR RESULTADO MAIS RECENTE
-# ============================================================
+    data = r.json()
 
-def save_last_result(result):
-    """
-    Salva o último resultado em last_result.json.
-    Esse arquivo é usado por outros módulos do sistema.
-    """
+    history = []
 
-    result["fetched_at_utc"] = datetime.now(timezone.utc).isoformat()
+    for item in data:
 
-    LAST_RESULT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        dezenas = sorted(int(d) for d in item["dezenas"])
 
-    with LAST_RESULT_PATH.open("w", encoding="utf-8") as f:
-        json.dump(
-            result,
-            f,
-            indent=2,
-            ensure_ascii=False
-        )
+        history.append({
+            "concurso": int(item["concurso"]),
+            "data": item["data"],
+            "dezenas": dezenas
+        })
+
+    return history
 
 
-# ============================================================
-# FUNÇÃO: LER ÚLTIMO CONCURSO DO CSV
-# ============================================================
-
-def load_last_csv_concurso():
-    """
-    Verifica qual o último concurso registrado
-    no arquivo histórico CSV.
-    """
-
-    if not CSV_HISTORY_PATH.exists():
-        return 0
-
-    with CSV_HISTORY_PATH.open("r", encoding="utf-8") as f:
-        rows = list(csv.reader(f))
-
-    if len(rows) == 0:
-        return 0
-
-    last_row = rows[-1]
-
-    try:
-        return int(last_row[0])
-    except Exception:
-        return 0
-
-
-# ============================================================
-# FUNÇÃO: ADICIONAR RESULTADO AO CSV
-# ============================================================
+# --------------------------------------------------
+# SALVAR CSV
+# --------------------------------------------------
 
 def append_csv(result):
-    """
-    Adiciona um novo concurso ao histórico CSV.
-    """
-
-    CSV_HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     row = [
         result["concurso"],
@@ -163,49 +137,97 @@ def append_csv(result):
         result["dezenas"][5],
     ]
 
-    with CSV_HISTORY_PATH.open("a", newline="", encoding="utf-8") as f:
+    with open(CSV_PATH, "a", newline="") as f:
+
         writer = csv.writer(f)
+
         writer.writerow(row)
 
 
-# ============================================================
+# --------------------------------------------------
+# SALVAR LAST_RESULT
+# --------------------------------------------------
+
+def save_last(result):
+
+    result["fetched_at_utc"] = datetime.now(timezone.utc).isoformat()
+
+    with open(LAST_JSON, "w") as f:
+
+        json.dump(result, f, indent=2)
+
+
+# --------------------------------------------------
 # MAIN
-# ============================================================
+# --------------------------------------------------
+
+def main():
+
+    existing = read_existing()
+
+    if existing:
+        last_saved = max(existing)
+    else:
+        last_saved = 0
+
+    print("Último concurso salvo:", last_saved)
+
+    latest = fetch_latest_caixa()
+
+    latest_concurso = latest["concurso"]
+
+    print("Último concurso na Caixa:", latest_concurso)
+
+    # --------------------------------------------------
+    # CASO NORMAL
+    # --------------------------------------------------
+
+    if latest_concurso == last_saved:
+
+        print("Nenhum concurso novo.")
+        return
+
+    # --------------------------------------------------
+    # SE FOR APENAS UM CONCURSO NOVO
+    # --------------------------------------------------
+
+    if latest_concurso == last_saved + 1:
+
+        print("Novo concurso encontrado:", latest_concurso)
+
+        append_csv(latest)
+
+        save_last(latest)
+
+        return
+
+    # --------------------------------------------------
+    # SE HOUVER CONCURSOS FALTANDO
+    # --------------------------------------------------
+
+    print("Detectado gap de concursos — buscando histórico")
+
+    history = fetch_history()
+
+    inserted = 0
+
+    for r in history:
+
+        if r["concurso"] > last_saved:
+
+            append_csv(r)
+
+            save_last(r)
+
+            inserted += 1
+
+            print("Adicionado concurso:", r["concurso"])
+
+    print("Total inserido:", inserted)
+
+
+# --------------------------------------------------
 
 if __name__ == "__main__":
 
-    # Último concurso salvo no JSON
-    last_concurso_json = load_last_concurso()
-
-    # Último concurso salvo no CSV
-    last_concurso_csv = load_last_csv_concurso()
-
-    # Usa o maior para evitar inconsistência
-    last_concurso = max(last_concurso_json, last_concurso_csv)
-
-    try:
-        latest = fetch_caixa()
-    except Exception as e:
-        print(f"❌ Falha ao consultar API oficial da Caixa: {e}")
-        raise SystemExit(1)
-
-    # ========================================================
-    # SE EXISTIR CONCURSO NOVO
-    # ========================================================
-
-    if latest["concurso"] > last_concurso:
-
-        print(f"✅ Novo concurso encontrado: {latest['concurso']}")
-
-        # Atualiza JSON com último resultado
-        save_last_result(latest)
-
-        # Atualiza histórico CSV
-        append_csv(latest)
-
-        print("📄 last_result.json atualizado")
-        print("📊 megasena.csv atualizado")
-
-    else:
-
-        print("ℹ️ Nenhum concurso novo encontrado.")
+    main()
