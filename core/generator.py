@@ -21,6 +21,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from core.features_megasena import build_features
 from core.versioning import register_strategy
 
 
@@ -83,6 +84,17 @@ def validate_game(game: list[int]) -> None:
         raise ValueError("Jogo inválido: dezenas repetidas")
 
 
+def _normalize_scores(scores: np.ndarray) -> np.ndarray:
+    scores = np.where(np.isfinite(scores), scores, 0.0)
+    scores = np.maximum(scores, 0.0) + 1e-9
+
+    total = float(scores.sum())
+    if total <= 0:
+        return np.ones(60) / 60.0
+
+    return scores / total
+
+
 # ============================================================
 # CARREGAMENTO DE PROBABILIDADES
 # ============================================================
@@ -115,56 +127,91 @@ def load_probs() -> np.ndarray:
                 probs[d - 1] = float(s)
         scores = probs
 
-    scores = np.where(np.isfinite(scores), scores, 0.0)
-    scores = np.maximum(scores, 0.0) + 1e-9
+    return _normalize_scores(scores)
 
-    total = float(scores.sum())
-    if total <= 0:
+
+def scores_from_features(features_df: pd.DataFrame) -> np.ndarray:
+    if "freq_100" not in features_df.columns:
         return np.ones(60) / 60.0
 
-    return scores / total
+    scores = features_df["freq_100"].astype(float).values
+
+    if "dezena" in features_df.columns:
+        ordered_scores = np.zeros(60)
+        for d, s in zip(features_df["dezena"].astype(int), scores):
+            if 1 <= d <= 60:
+                ordered_scores[d - 1] = float(s)
+        scores = ordered_scores
+
+    return _normalize_scores(scores)
+
+
+def build_probabilities_from_history(
+    results_df: pd.DataFrame,
+    window: int = 100,
+) -> np.ndarray:
+    features_df = build_features(results_df, window=window)
+    return scores_from_features(features_df)
 
 
 # ============================================================
 # GERAÇÃO PRINCIPAL
 # ============================================================
 
-def generate_games(seed: int | None = None) -> list[list[int]]:
+def generate_games_from_probs(
+    probs: np.ndarray,
+    *,
+    seed: int | None = None,
+    n_games: int = N_GAMES,
+    ticket_size: int = TICKET_SIZE,
+    n_sim: int = N_SIM,
+    max_intersection: int = MAX_INTERSECTION,
+) -> list[list[int]]:
     rng = np.random.default_rng(seed)
-    probs = load_probs()
-
-    candidates = [weighted_sample(probs, TICKET_SIZE, rng) for _ in range(N_SIM)]
+    candidates = [weighted_sample(probs, ticket_size, rng) for _ in range(n_sim)]
 
     selected: list[list[int]] = []
 
     for g in candidates:
-        if len(selected) >= N_GAMES:
+        if len(selected) >= n_games:
             break
 
         # Controle de diversidade (interseção máxima)
-        if all(len(set(g).intersection(s)) <= MAX_INTERSECTION for s in selected):
+        if all(len(set(g).intersection(s)) <= max_intersection for s in selected):
             selected.append(g)
 
     # Fallback se diversidade bloquear demais
-    if len(selected) < N_GAMES:
+    if len(selected) < n_games:
         seen = {tuple(x) for x in selected}
         for g in candidates:
             tg = tuple(g)
             if tg not in seen:
                 selected.append(g)
                 seen.add(tg)
-                if len(selected) >= N_GAMES:
+                if len(selected) >= n_games:
                     break
 
     # Último fallback determinístico
-    while len(selected) < N_GAMES:
-        g = sorted(rng.choice(np.arange(1, 61), size=TICKET_SIZE, replace=False))
+    while len(selected) < n_games:
+        g = sorted(rng.choice(np.arange(1, 61), size=ticket_size, replace=False))
         selected.append([int(x) for x in g])
 
     for g in selected:
-        validate_game(g)
+        if len(g) != ticket_size:
+            raise ValueError(
+                f"Jogo inválido: esperado {ticket_size}, obtido {len(g)}"
+            )
+        if any((n < MIN_N or n > MAX_N) for n in g):
+            raise ValueError(f"Jogo inválido: dezenas fora de [{MIN_N}..{MAX_N}]")
+        if len(set(g)) != ticket_size:
+            raise ValueError("Jogo inválido: dezenas repetidas")
 
-    return selected[:N_GAMES]
+    return selected[:n_games]
+
+
+def generate_games(seed: int | None = None) -> list[list[int]]:
+    probs = load_probs()
+    return generate_games_from_probs(probs, seed=seed)
 
 
 # ============================================================

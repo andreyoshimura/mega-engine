@@ -47,13 +47,17 @@ jobs:
         run: |
           python -m core.compare_results
 
+      - name: Monitor performance
+        run: |
+          python -m core.monitor_performance
+
       # 5) Commit seguro
       - name: Commit results (if changed)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add data/performance_log.jsonl data/last_result.json
+          git add data/performance_log.jsonl data/last_result.json out/performance_monitor.json out/recalibration_signal.json
 
           if ! git diff --cached --quiet; then
             git commit -m "chore: log Mega-Sena results"
