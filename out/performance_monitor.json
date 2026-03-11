@@ -1,0 +1,26 @@
+{
+  "status": "insufficient_history",
+  "strategy_name": "megasena_v1",
+  "model_version": "1.0.1",
+  "total_events": 9,
+  "latest_concurso": 2982,
+  "monitoring": {
+    "recent_window": 5,
+    "baseline_window": 20,
+    "min_draws_required": 12,
+    "score_drop_ratio": 0.5,
+    "max_hits_drop_ratio": 0.85,
+    "ge4_drop_ratio": 0.5
+  },
+  "decision": {
+    "should_recalibrate": false,
+    "reasons": [
+      "insufficient_history"
+    ],
+    "ratios": {
+      "score_ratio": null,
+      "max_hits_ratio": null,
+      "ge4_ratio": null
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "should_recalibrate": false,
+  "reasons": [
+    "insufficient_history"
+  ],
+  "latest_concurso": 2982,
+  "strategy_name": "megasena_v1",
+  "model_version": "1.0.1"
+}
