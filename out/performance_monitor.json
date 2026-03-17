@@ -2,8 +2,8 @@
   "status": "insufficient_history",
   "strategy_name": "megasena_v1",
   "model_version": "1.0.1",
-  "total_events": 10,
-  "latest_concurso": 2983,
+  "total_events": 11,
+  "latest_concurso": 2984,
   "monitoring": {
     "recent_window": 5,
     "baseline_window": 20,
