@@ -1,7 +1,7 @@
 {
   "should_recalibrate": false,
   "reasons": [],
-  "latest_concurso": 2985,
+  "latest_concurso": 2986,
   "strategy_name": "megasena_v1",
   "model_version": "1.0.1"
 }
