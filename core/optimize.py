@@ -1,50 +1,34 @@
+from __future__ import annotations
+
 import json
 from itertools import product
-from pathlib import Path
 
 import pandas as pd
 
-from core.backtest import (
+from core.backtest import run_backtest
+from core.config import (
     DEFAULT_BACKTEST_N_SIM,
     DEFAULT_MIN_HISTORY,
+    DEFAULT_NUM_GAMES,
+    DEFAULT_OPTIMIZATION_GRID,
+    DEFAULT_TICKET_SIZE,
+    OPTIMIZATION_REPORT_PATH as OUT_PATH,
+    RECOMMENDED_CONFIG_PATH,
     RESULTS_PATH,
-    run_backtest,
+    get_optimization_grid,
+    get_parameters,
+    load_config,
 )
-from core.generator import TICKET_SIZE
 from core.versioning import _config_hash
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-CONFIG_PATH = REPO_ROOT / "configs" / "strategy_config.json"
-OUT_PATH = REPO_ROOT / "out" / "optimization_report.json"
-RECOMMENDED_CONFIG_PATH = REPO_ROOT / "out" / "recommended_strategy_config.json"
-
-DEFAULT_GRID = {
-    "window": [50, 100, 150],
-    "num_games": [4, 5, 6],
-    "max_intersection": [3, 4, 5],
-}
-
-
-def load_config() -> dict:
-    with CONFIG_PATH.open("r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def build_grid(params: dict) -> list[dict]:
-    grid = params.get("optimization_grid", {})
-    windows = grid.get("window", DEFAULT_GRID["window"])
-    num_games_options = grid.get("num_games", DEFAULT_GRID["num_games"])
-    max_intersections = grid.get(
-        "max_intersection",
-        DEFAULT_GRID["max_intersection"],
-    )
-
+def build_grid(config: dict) -> list[dict]:
+    grid = get_optimization_grid(config)
     combinations = []
     for window, num_games, max_intersection in product(
-        windows,
-        num_games_options,
-        max_intersections,
+        grid.get("window", DEFAULT_OPTIMIZATION_GRID["window"]),
+        grid.get("num_games", DEFAULT_OPTIMIZATION_GRID["num_games"]),
+        grid.get("max_intersection", DEFAULT_OPTIMIZATION_GRID["max_intersection"]),
     ):
         combinations.append(
             {
@@ -67,25 +51,23 @@ def rank_key(candidate: dict) -> tuple[float, float, float, float]:
 
 
 def run_optimization(results_df: pd.DataFrame, config: dict) -> dict:
-    params = config.get("parameters", {})
-    ticket_size = int(params.get("ticket_size", TICKET_SIZE))
+    params = get_parameters(config)
+    ticket_size = int(params.get("ticket_size", DEFAULT_TICKET_SIZE))
     min_history = int(params.get("min_history", DEFAULT_MIN_HISTORY))
     backtest_n_sim = int(params.get("backtest_n_sim", DEFAULT_BACKTEST_N_SIM))
 
     candidates = []
-
-    for combination in build_grid(params):
+    for combination in build_grid(config):
         window = int(combination["window"])
         summary_report = run_backtest(
             results_df,
             window=window,
             min_history=max(min_history, window),
-            n_games=int(combination["num_games"]),
+            n_games=int(combination.get("num_games", DEFAULT_NUM_GAMES)),
             ticket_size=ticket_size,
             n_sim=backtest_n_sim,
             max_intersection=int(combination["max_intersection"]),
         )
-
         summary = summary_report["summary"]
         candidates.append(
             {
@@ -101,11 +83,10 @@ def run_optimization(results_df: pd.DataFrame, config: dict) -> dict:
         )
 
     candidates.sort(key=rank_key, reverse=True)
-
     best = candidates[0]
+
     recommended_parameters = dict(params)
     recommended_parameters.update(best["parameters"])
-
     recommended_config = {
         "strategy_name": config.get("strategy_name"),
         "model_version": config.get("model_version"),
@@ -150,12 +131,14 @@ def main() -> None:
         json.dump(report["recommended_config"], f, indent=2, ensure_ascii=False)
 
     best = report["best"]
+    tested = report["search"]["candidates_tested"]
+    best_avg_score = best["summary"]["avg_score"]
+    best_rate_ge4 = best["summary"]["rate_ge4"]
     print(
         "[OPTIMIZE] OK:",
-        f"tested={report['search']['candidates_tested']}",
-        f"best_avg_score={best['summary']['avg_score']}",
-        f"best_rate_ge4={best['summary']['rate_ge4']}",
-        f"params={best['parameters']}",
+        f"tested={tested}",
+        f"best_avg_score={best_avg_score}",
+        f"best_rate_ge4={best_rate_ge4}",
         f"recommended_config={RECOMMENDED_CONFIG_PATH}",
     )
 

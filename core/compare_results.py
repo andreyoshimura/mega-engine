@@ -2,174 +2,181 @@ from __future__ import annotations
 
 import json
 import os
+from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any
 
-# ============================================================
-# CONFIG
-# ============================================================
+from core.config import (
+    GAME_NAME,
+    LAST_RESULT_PATH,
+    MAX_NUMBER,
+    MIN_NUMBER,
+    OUT_GAMES_PATH,
+    OUT_HISTORY_DIR,
+    PERFORMANCE_LOG_PATH,
+)
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+OUT_JOGOS = OUT_GAMES_PATH
+OUT_HISTORY = OUT_HISTORY_DIR
+PERF_LOG = PERFORMANCE_LOG_PATH
+LAST_RESULT = LAST_RESULT_PATH
+MIN_N = MIN_NUMBER
+MAX_N = MAX_NUMBER
+DEFAULT_DRAW_SIZE = 6
+DEFAULT_TICKET_SIZE = 9
 
-OUT_JOGOS = REPO_ROOT / "out" / "jogos_gerados.json"
-
-DATA_DIR = REPO_ROOT / "data"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
-
-PERF_LOG = DATA_DIR / "performance_log.jsonl"  # append-only
-LAST_RESULT = DATA_DIR / "last_result.json"
-
-MIN_N = 1
-MAX_N = 60
-DRAW_SIZE = 6
-TICKET_SIZE = 9
-
-
-# ============================================================
-# MODELO DE DADOS
-# ============================================================
 
 @dataclass(frozen=True)
 class LatestDraw:
     concurso: int
     data: str
-    dezenas: Tuple[int, ...]
+    dezenas: tuple[int, ...]
 
-
-# ============================================================
-# UTIL
-# ============================================================
 
 def _load_json(path: Path) -> Any:
     with path.open("r", encoding="utf-8") as f:
         return json.load(f)
 
 
-def _append_jsonl(path: Path, obj: Dict[str, Any]) -> None:
+def _append_jsonl(path: Path, obj: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as f:
         f.write(json.dumps(obj, ensure_ascii=False) + "\n")
 
 
-def _parse_int_list(x: Any) -> List[int]:
+def _parse_int_list(x: Any) -> list[int]:
     if not isinstance(x, list):
         return []
     out = []
     for v in x:
         try:
             out.append(int(v))
-        except Exception:
-            pass
+        except (TypeError, ValueError):
+            continue
     return out
 
 
-def _validate_numbers(nums: List[int], *, expected_len: int) -> List[int]:
-    cleaned = []
-    for n in nums:
-        if isinstance(n, int) and MIN_N <= n <= MAX_N:
-            cleaned.append(n)
-
+def _validate_numbers(nums: list[int], *, expected_len: int) -> list[int]:
+    cleaned = [n for n in nums if isinstance(n, int) and MIN_N <= n <= MAX_N]
     uniq = sorted(set(cleaned))
+    if len(uniq) == expected_len:
+        return uniq
+    raise ValueError(f"Numeros invalidos: esperado {expected_len} distintos. Obtido={uniq}")
 
-    if len(uniq) != expected_len:
-        raise ValueError(
-            f"Números inválidos: esperado {expected_len} distintos. Obtido={uniq}"
-        )
-
-    return uniq
-
-
-# ============================================================
-# 🔥 AGORA LÊ SOMENTE DO ARQUIVO LOCAL
-# ============================================================
 
 def load_latest_draw_from_file() -> LatestDraw:
-    """
-    Fonte única da verdade.
-    Compare NÃO consulta API.
-    Apenas lê data/last_result.json
-    """
     if not LAST_RESULT.exists():
-        raise FileNotFoundError("data/last_result.json não encontrado.")
+        raise FileNotFoundError("data/last_result.json nao encontrado.")
 
     data = _load_json(LAST_RESULT)
-
-    dezenas = _validate_numbers(
-        _parse_int_list(data.get("dezenas")),
-        expected_len=DRAW_SIZE,
-    )
-
-    return LatestDraw(
-        concurso=int(data["concurso"]),
-        data=str(data["data"]),
-        dezenas=tuple(dezenas),
-    )
+    dezenas = _validate_numbers(_parse_int_list(data.get("dezenas")), expected_len=DEFAULT_DRAW_SIZE)
+    return LatestDraw(concurso=int(data["concurso"]), data=str(data["data"]), dezenas=tuple(dezenas))
 
 
-# ============================================================
-# JOGOS GERADOS
-# ============================================================
+def _payload_to_runtime(payload: dict[str, Any]) -> tuple[dict[str, Any], list[tuple[str, list[int]]]]:
+    if str(payload.get("game", "")).lower() != GAME_NAME:
+        raise ValueError("out/jogos_gerados.json invalido")
 
-def load_generated_games() -> Tuple[int, List[Tuple[str, List[int]]]]:
-    j = _load_json(OUT_JOGOS)
+    games = payload.get("games")
+    if not isinstance(games, list) or not games:
+        raise ValueError("Lista games invalida ou vazia")
 
-    if str(j.get("game", "")).lower() != "megasena":
-        raise ValueError("out/jogos_gerados.json inválido")
-
-    games = j.get("games")
-    if not isinstance(games, list) or len(games) == 0:
-        raise ValueError("Lista games inválida ou vazia")
-
-    out: List[Tuple[str, List[int]]] = []
-
-    for g in games:
-        gid = str(g.get("id", "")).strip() or "J??"
-        nums = _validate_numbers(
-            _parse_int_list(g.get("numbers")),
-            expected_len=TICKET_SIZE,
-        )
+    ticket_size = int(payload.get("ticket_size", DEFAULT_TICKET_SIZE))
+    out: list[tuple[str, list[int]]] = []
+    for game in games:
+        gid = str(game.get("id", "")).strip() or "J??"
+        nums = _validate_numbers(_parse_int_list(game.get("numbers")), expected_len=ticket_size)
         out.append((gid, nums))
 
-    return len(out), out
+    metadata = payload.get("metadata", {})
+    if not isinstance(metadata, dict):
+        metadata = {}
+
+    info = {
+        "ticket_size": ticket_size,
+        "draw_size": int(payload.get("draw_size", DEFAULT_DRAW_SIZE)),
+        "n_games": len(out),
+        "objective": payload.get("objective"),
+        "metadata": metadata,
+    }
+    return info, out
 
 
-# ============================================================
-# LOG CHECK
-# ============================================================
+def load_generated_games(concurso: int) -> tuple[dict[str, Any], list[tuple[str, list[int]]]]:
+    history_path = OUT_HISTORY / f"jogos_concurso_{int(concurso)}.json"
+    if history_path.exists():
+        payload = _load_json(history_path)
+        return _payload_to_runtime(payload)
+
+    payload = _load_json(OUT_JOGOS)
+    info, games = _payload_to_runtime(payload)
+    target_concurso = info["metadata"].get("target_concurso")
+    if target_concurso is not None and int(target_concurso) != int(concurso):
+        raise ValueError(
+            f"Jogos atuais apontam para o concurso {target_concurso}, mas o resultado publicado eh do concurso {concurso}."
+        )
+    return info, games
+
 
 def already_logged(concurso: int) -> bool:
     if not PERF_LOG.exists():
         return False
 
-    needle = f'"concurso": {concurso}'
-
     with PERF_LOG.open("r", encoding="utf-8") as f:
         for line in f:
-            if needle in line:
+            if not line.strip():
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if int(event.get("concurso", -1)) == concurso:
                 return True
-
     return False
 
 
-# ============================================================
-# COMPUTAÇÃO
-# ============================================================
+def summarize_recent_events(window: int = 20) -> dict[str, Any] | None:
+    if not PERF_LOG.exists():
+        return None
 
-def compute_hits(draw_set: Set[int], games: List[Tuple[str, List[int]]]) -> Dict[str, Any]:
+    events: list[dict[str, Any]] = []
+    with PERF_LOG.open("r", encoding="utf-8") as f:
+        for line in f:
+            if not line.strip():
+                continue
+            try:
+                events.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+
+    if not events:
+        return None
+
+    sample = events[-window:]
+    draws = len(sample)
+    return {
+        "avg_max_hits": round(sum(float(e.get("max_hits", 0)) for e in sample) / draws, 4),
+        "avg_score": round(sum(float(e.get("score", 0)) for e in sample) / draws, 4),
+        "rate_ge4": round(sum(1 for e in sample if int(e.get("count_ge4", 0)) > 0) / draws, 4),
+        "window": draws,
+    }
+
+
+def compute_hits(draw_set: set[int], games: list[tuple[str, list[int]]]) -> dict[str, Any]:
     per_game = []
-
     for gid, nums in games:
         hits = sum(1 for n in nums if n in draw_set)
         per_game.append({"id": gid, "numbers": nums, "hits": hits})
 
-    max_hits = max((x["hits"] for x in per_game), default=0)
-    ge4 = sum(1 for x in per_game if x["hits"] >= 4)
-    ge5 = sum(1 for x in per_game if x["hits"] >= 5)
-    eq6 = sum(1 for x in per_game if x["hits"] == 6)
-
+    max_hits = max((item["hits"] for item in per_game), default=0)
+    ge4 = sum(1 for item in per_game if item["hits"] >= 4)
+    ge5 = sum(1 for item in per_game if item["hits"] >= 5)
+    eq6 = sum(1 for item in per_game if item["hits"] == 6)
     score = (ge4 * 1) + (ge5 * 5) + (eq6 * 50)
+    hit_counter = Counter(item["hits"] for item in per_game)
+    hist_hits_count = {str(i): int(hit_counter.get(i, 0)) for i in range(10)}
 
     return {
         "per_game": per_game,
@@ -179,57 +186,48 @@ def compute_hits(draw_set: Set[int], games: List[Tuple[str, List[int]]]) -> Dict
             "count_ge5": ge5,
             "count_eq6": eq6,
             "score": score,
+            "hist_hits_count": hist_hits_count,
         },
     }
 
 
-# ============================================================
-# MAIN
-# ============================================================
-
 def main() -> None:
-    if not OUT_JOGOS.exists():
-        raise FileNotFoundError("Não encontrei out/jogos_gerados.json")
-
-    # 🔥 Agora NÃO consulta API
     latest = load_latest_draw_from_file()
-
     if already_logged(latest.concurso):
-        print(f"[COMPARE] Concurso {latest.concurso} já logado.")
+        print(f"[COMPARE] Concurso {latest.concurso} ja logado.")
         return
 
-    git_sha = os.getenv("GITHUB_SHA", "").strip() or "unknown"
-    strategy = os.getenv("STRATEGY_NAME", "").strip() or "megasena_v1"
-
-    n_games_runtime, games = load_generated_games()
+    generated_meta, games = load_generated_games(latest.concurso)
     draw_set = set(latest.dezenas)
-
     result = compute_hits(draw_set, games)
+    rolling_20 = summarize_recent_events(window=20)
 
     event = {
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-        "game": "megasena",
+        "game": GAME_NAME,
         "concurso": latest.concurso,
         "data_sorteio": latest.data,
         "dezenas_sorteadas": list(latest.dezenas),
-        "ticket_size": TICKET_SIZE,
-        "n_games": n_games_runtime,
+        "ticket_size": generated_meta["ticket_size"],
+        "n_games": generated_meta["n_games"],
         "meta": {
-            "git_sha": git_sha,
-            "strategy": strategy,
+            "git_sha": os.getenv("GITHUB_SHA", "").strip() or "unknown",
+            "strategy": generated_meta["metadata"].get("strategy_name") or os.getenv("STRATEGY_NAME", "").strip() or "megasena_v1",
+            "model_version": generated_meta["metadata"].get("model_version"),
+            "generated_at_utc": generated_meta["metadata"].get("generated_at_utc"),
+            "target_concurso": generated_meta["metadata"].get("target_concurso"),
         },
         **result["summary"],
         "games": result["per_game"],
     }
+    if rolling_20 is not None:
+        event["rolling_20"] = rolling_20
 
     _append_jsonl(PERF_LOG, event)
-
-    print(
-        f"[COMPARE] OK: concurso={latest.concurso} "
-        f"n_games={n_games_runtime} "
-        f"max_hits={event['max_hits']} "
-        f"score={event['score']}"
-    )
+    n_games = generated_meta["n_games"]
+    max_hits = event["max_hits"]
+    score = event["score"]
+    print("[COMPARE] OK:", f"concurso={latest.concurso}", f"n_games={n_games}", f"max_hits={max_hits}", f"score={score}")
 
 
 if __name__ == "__main__":

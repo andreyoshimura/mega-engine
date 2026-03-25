@@ -1,36 +1,35 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from core.config import DEFAULT_WINDOW, FEATURES_PATH as OUT_PATH, RESULTS_PATH
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-RESULTS_PATH = REPO_ROOT / "data" / "results" / "megasena.csv"
-OUT_PATH = REPO_ROOT / "data" / "features" / "dezenas.csv"
-
-WINDOW = 100
+WINDOW = DEFAULT_WINDOW
 DRAW_COLUMNS = [f"d{i}" for i in range(1, 7)]
 
 
 def build_features(df: pd.DataFrame, window: int = WINDOW) -> pd.DataFrame:
-    if df.empty:
-        freq = np.zeros(61)
-    else:
+    if window <= 0:
+        raise ValueError("window deve ser maior que zero")
+
+    freq = np.zeros(61, dtype=float)
+
+    if not df.empty:
         recent = df.tail(window)
-        freq = np.zeros(61)
+        flattened = recent[DRAW_COLUMNS].to_numpy(dtype=int).ravel()
+        counts = np.bincount(flattened, minlength=61)
+        freq[: len(counts)] = counts
 
-        for _, row in recent.iterrows():
-            for col in DRAW_COLUMNS:
-                freq[int(row[col])] += 1
-
-    features = [
+    return pd.DataFrame(
         {
-            "dezena": n,
-            "freq_100": float(freq[n]),
+            "dezena": np.arange(1, 61, dtype=int),
+            "freq_100": freq[1:61],
         }
-        for n in range(1, 61)
-    ]
-    return pd.DataFrame(features)
+    )
+
 
 
 def generate_features(

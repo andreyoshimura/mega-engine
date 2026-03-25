@@ -1,0 +1,87 @@
+{
+  "game": "megasena",
+  "ticket_size": 9,
+  "draw_size": 6,
+  "n_games": 5,
+  "objective": "maximize_hit_rate_ge4",
+  "games": [
+    {
+      "id": "J01",
+      "numbers": [
+        1,
+        3,
+        6,
+        10,
+        11,
+        17,
+        20,
+        43,
+        53
+      ]
+    },
+    {
+      "id": "J02",
+      "numbers": [
+        9,
+        10,
+        33,
+        40,
+        44,
+        46,
+        50,
+        53,
+        56
+      ]
+    },
+    {
+      "id": "J03",
+      "numbers": [
+        9,
+        14,
+        32,
+        33,
+        48,
+        51,
+        53,
+        54,
+        59
+      ]
+    },
+    {
+      "id": "J04",
+      "numbers": [
+        8,
+        13,
+        15,
+        19,
+        22,
+        37,
+        41,
+        58,
+        60
+      ]
+    },
+    {
+      "id": "J05",
+      "numbers": [
+        27,
+        34,
+        38,
+        41,
+        44,
+        47,
+        48,
+        56,
+        58
+      ]
+    }
+  ],
+  "metadata": {
+    "strategy_name": "megasena_v1",
+    "model_version": null,
+    "generated_at_utc": null,
+    "target_concurso": 2984,
+    "source_commit_sha": "b7cf7de64f2f09b6b152a07868a68f1bc2846761",
+    "reconstructed_at_utc": "2026-03-25T13:51:55.180756+00:00"
+  }
+}

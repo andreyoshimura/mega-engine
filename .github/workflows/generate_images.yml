@@ -1,16 +1,11 @@
 name: Generate Weekly Mega Image
 
 on:
-  # Permite rodar manualmente pelo botão "Run workflow"
   workflow_dispatch:
-
-  # Executa automaticamente todo domingo às 09:00 UTC
-  # (06:00 horário de Brasília se UTC-3)
   schedule:
     - cron: "0 9 * * 0"
 
 permissions:
-  # Necessário para permitir commit e push pelo GitHub Actions
   contents: write
 
 jobs:
@@ -18,64 +13,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ------------------------------------------------------------
-      # 1) Checkout do repositório
-      # ------------------------------------------------------------
-      # Baixa o código do repositório para o runner
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      # ------------------------------------------------------------
-      # 2) Setup do Python
-      # ------------------------------------------------------------
-      # Define versão 3.11 (compatível com SDK OpenAI atual)
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      # ------------------------------------------------------------
-      # 3) Instala dependências necessárias
-      # ------------------------------------------------------------
-      # - openai: SDK para geração de imagem
-      # - pillow: manipulação de imagens (dependência comum)
-      - name: Install dependencies
+      - name: Install project
         run: |
           python -m pip install --upgrade pip
-          pip install openai pillow
+          pip install .
 
-      # ------------------------------------------------------------
-      # 4) Executa o gerador de imagem
-      # ------------------------------------------------------------
-      # Requer secret OPENAI_API_KEY configurado em:
-      # Settings > Secrets and variables > Actions
       - name: Generate Mega weekly image
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          python core/image_generator.py
+          python -m core.image_generator
 
-      # ------------------------------------------------------------
-      # 5) Commit somente se houver alteração real
-      # ------------------------------------------------------------
-      # CORREÇÃO IMPORTANTE:
-      # - Primeiro adicionamos as imagens ao stage
-      # - Depois verificamos mudanças staged (--cached)
-      # - Isso evita falso negativo do git diff
       - name: Commit image (if changed)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Adiciona apenas as imagens geradas
           git add out/images/*.png
 
-          # Verifica se há alterações staged
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
           fi
 
-          # Se houver mudanças, commit e push
           git commit -m "chore: update weekly mega image"
-          git push
+          git push origin HEAD:main

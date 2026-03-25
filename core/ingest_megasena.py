@@ -1,233 +1,151 @@
-"""
-Mega-Engine
-Ingest Mega-Sena com fallback inteligente
+from __future__ import annotations
 
-Fluxo:
-
-1) consulta API oficial da Caixa
-2) verifica último concurso salvo no CSV
-3) se houver concursos faltando:
-      usa API histórica alternativa
-4) atualiza:
-      data/results/megasena.csv
-      data/last_result.json
-
-Isso evita:
-- pular concursos
-- depender de API instável
-"""
-
-import requests
-import csv
 import json
-from pathlib import Path
 from datetime import datetime, timezone
 
+import pandas as pd
+import requests
 
-# --------------------------------------------------
-# PATHS
-# --------------------------------------------------
-
-ROOT = Path(__file__).resolve().parents[1]
-
-CSV_PATH = ROOT / "data" / "results" / "megasena.csv"
-LAST_JSON = ROOT / "data" / "last_result.json"
-
-
-# --------------------------------------------------
-# APIS
-# --------------------------------------------------
+from core.config import LAST_RESULT_PATH as LAST_JSON, RESULTS_PATH as CSV_PATH
 
 API_CAIXA = "https://servicebus2.caixa.gov.br/portaldeloterias/api/megasena"
-
 API_HISTORICO = "https://loteriascaixa-api.herokuapp.com/api/megasena"
+REQUEST_TIMEOUT = 20
+DRAW_COLUMNS = [f"d{i}" for i in range(1, 7)]
+CSV_COLUMNS = ["concurso", "data", *DRAW_COLUMNS]
 
 
-# --------------------------------------------------
-# LER CSV
-# --------------------------------------------------
-
-def read_existing():
-
-    concursos = []
-
-    if not CSV_PATH.exists():
-        return concursos
-
-    with open(CSV_PATH) as f:
-
-        reader = csv.reader(f)
-
-        for row in reader:
-
-            try:
-                concursos.append(int(row[0]))
-            except:
-                pass
-
-    return concursos
+def _session() -> requests.Session:
+    session = requests.Session()
+    session.headers.update({"User-Agent": "mega-engine/1.1"})
+    return session
 
 
-# --------------------------------------------------
-# CONSULTAR API CAIXA
-# --------------------------------------------------
+def _request_json(session: requests.Session, url: str):
+    response = session.get(url, timeout=REQUEST_TIMEOUT)
+    response.raise_for_status()
+    return response.json()
 
-def fetch_latest_caixa():
 
-    print("Consultando API oficial da Caixa...")
-
-    r = requests.get(API_CAIXA)
-
-    r.raise_for_status()
-
-    data = r.json()
-
-    dezenas = sorted(int(d) for d in data["listaDezenas"])
-
+def _normalize_result(concurso: int, data: str, dezenas: list[int]) -> dict:
+    dezenas_ordenadas = sorted(int(d) for d in dezenas)
+    if len(dezenas_ordenadas) != 6 or len(set(dezenas_ordenadas)) != 6:
+        raise ValueError(f"Resultado invalido para concurso {concurso}: {dezenas}")
     return {
-        "concurso": int(data["numero"]),
-        "data": data["dataApuracao"],
-        "dezenas": dezenas
+        "concurso": int(concurso),
+        "data": str(data),
+        "dezenas": dezenas_ordenadas,
     }
 
 
-# --------------------------------------------------
-# CONSULTAR HISTÓRICO COMPLETO
-# --------------------------------------------------
+def read_existing() -> pd.DataFrame:
+    if not CSV_PATH.exists():
+        return pd.DataFrame(columns=CSV_COLUMNS)
 
-def fetch_history():
+    df = pd.read_csv(CSV_PATH)
+    if list(df.columns) != CSV_COLUMNS:
+        df = df[CSV_COLUMNS]
+    df = df.dropna(subset=["concurso"])
+    df["concurso"] = df["concurso"].astype(int)
+    for col in DRAW_COLUMNS:
+        df[col] = df[col].astype(int)
+    return df.sort_values("concurso").drop_duplicates(subset=["concurso"], keep="last")
 
-    print("Consultando API histórica (fallback)...")
 
-    r = requests.get(API_HISTORICO)
+def fetch_latest_caixa(session: requests.Session) -> dict:
+    print("[INGEST] Consultando API oficial da Caixa...")
+    data = _request_json(session, API_CAIXA)
+    return _normalize_result(
+        concurso=int(data["numero"]),
+        data=data["dataApuracao"],
+        dezenas=[int(d) for d in data["listaDezenas"]],
+    )
 
-    r.raise_for_status()
 
-    data = r.json()
-
+def fetch_history(session: requests.Session) -> list[dict]:
+    print("[INGEST] Consultando API historica (fallback)...")
+    data = _request_json(session, API_HISTORICO)
     history = []
-
     for item in data:
-
-        dezenas = sorted(int(d) for d in item["dezenas"])
-
-        history.append({
-            "concurso": int(item["concurso"]),
-            "data": item["data"],
-            "dezenas": dezenas
-        })
-
+        history.append(
+            _normalize_result(
+                concurso=int(item["concurso"]),
+                data=item["data"],
+                dezenas=[int(d) for d in item["dezenas"]],
+            )
+        )
+    history.sort(key=lambda item: item["concurso"])
     return history
 
 
-# --------------------------------------------------
-# SALVAR CSV
-# --------------------------------------------------
+def merge_results(existing_df: pd.DataFrame, new_results: list[dict]) -> pd.DataFrame:
+    if not new_results:
+        return existing_df.copy()
 
-def append_csv(result):
-
-    row = [
-        result["concurso"],
-        result["data"],
-        result["dezenas"][0],
-        result["dezenas"][1],
-        result["dezenas"][2],
-        result["dezenas"][3],
-        result["dezenas"][4],
-        result["dezenas"][5],
-    ]
-
-    with open(CSV_PATH, "a", newline="") as f:
-
-        writer = csv.writer(f)
-
-        writer.writerow(row)
-
-
-# --------------------------------------------------
-# SALVAR LAST_RESULT
-# --------------------------------------------------
-
-def save_last(result):
-
-    result["fetched_at_utc"] = datetime.now(timezone.utc).isoformat()
-
-    with open(LAST_JSON, "w") as f:
-
-        json.dump(result, f, indent=2)
+    new_df = pd.DataFrame(
+        [
+            {
+                "concurso": item["concurso"],
+                "data": item["data"],
+                "d1": item["dezenas"][0],
+                "d2": item["dezenas"][1],
+                "d3": item["dezenas"][2],
+                "d4": item["dezenas"][3],
+                "d5": item["dezenas"][4],
+                "d6": item["dezenas"][5],
+            }
+            for item in new_results
+        ]
+    )
+    merged = pd.concat([existing_df, new_df], ignore_index=True)
+    merged = merged.sort_values("concurso").drop_duplicates(subset=["concurso"], keep="last")
+    return merged[CSV_COLUMNS]
 
 
-# --------------------------------------------------
-# MAIN
-# --------------------------------------------------
+def save_results(df: pd.DataFrame) -> None:
+    CSV_PATH.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(CSV_PATH, index=False)
 
-def main():
 
-    existing = read_existing()
+def save_last(result: dict) -> None:
+    payload = dict(result)
+    payload["fetched_at_utc"] = datetime.now(timezone.utc).isoformat()
+    LAST_JSON.parent.mkdir(parents=True, exist_ok=True)
+    with LAST_JSON.open("w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
 
-    if existing:
-        last_saved = max(existing)
-    else:
-        last_saved = 0
 
-    print("Último concurso salvo:", last_saved)
+def main() -> None:
+    existing_df = read_existing()
+    last_saved = int(existing_df["concurso"].max()) if not existing_df.empty else 0
+    print(f"[INGEST] Ultimo concurso salvo: {last_saved}")
 
-    latest = fetch_latest_caixa()
-
+    session = _session()
+    latest = fetch_latest_caixa(session)
     latest_concurso = latest["concurso"]
+    print(f"[INGEST] Ultimo concurso na Caixa: {latest_concurso}")
 
-    print("Último concurso na Caixa:", latest_concurso)
-
-    # --------------------------------------------------
-    # CASO NORMAL
-    # --------------------------------------------------
-
-    if latest_concurso == last_saved:
-
-        print("Nenhum concurso novo.")
+    if latest_concurso <= last_saved:
+        print("[INGEST] Nenhum concurso novo.")
+        if latest_concurso == last_saved:
+            save_last(latest)
         return
-
-    # --------------------------------------------------
-    # SE FOR APENAS UM CONCURSO NOVO
-    # --------------------------------------------------
 
     if latest_concurso == last_saved + 1:
+        new_results = [latest]
+    else:
+        history = fetch_history(session)
+        new_results = [item for item in history if item["concurso"] > last_saved]
 
-        print("Novo concurso encontrado:", latest_concurso)
-
-        append_csv(latest)
-
-        save_last(latest)
-
+    if not new_results:
+        print("[INGEST] Nenhum concurso novo apos conciliacao.")
         return
 
-    # --------------------------------------------------
-    # SE HOUVER CONCURSOS FALTANDO
-    # --------------------------------------------------
+    merged = merge_results(existing_df, new_results)
+    save_results(merged)
+    save_last(new_results[-1])
+    print(f"[INGEST] Concursos inseridos/atualizados: {len(new_results)}")
 
-    print("Detectado gap de concursos — buscando histórico")
-
-    history = fetch_history()
-
-    inserted = 0
-
-    for r in history:
-
-        if r["concurso"] > last_saved:
-
-            append_csv(r)
-
-            save_last(r)
-
-            inserted += 1
-
-            print("Adicionado concurso:", r["concurso"])
-
-    print("Total inserido:", inserted)
-
-
-# --------------------------------------------------
 
 if __name__ == "__main__":
-
     main()

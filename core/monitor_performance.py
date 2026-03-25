@@ -1,34 +1,22 @@
+from __future__ import annotations
+
 import json
-from pathlib import Path
 
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-CONFIG_PATH = REPO_ROOT / "configs" / "strategy_config.json"
-PERF_LOG_PATH = REPO_ROOT / "data" / "performance_log.jsonl"
-MONITOR_REPORT_PATH = REPO_ROOT / "out" / "performance_monitor.json"
-RECALIBRATION_SIGNAL_PATH = REPO_ROOT / "out" / "recalibration_signal.json"
-
-DEFAULT_MONITORING = {
-    "recent_window": 5,
-    "baseline_window": 20,
-    "min_draws_required": 12,
-    "score_drop_ratio": 0.5,
-    "max_hits_drop_ratio": 0.85,
-    "ge4_drop_ratio": 0.5,
-}
-
-
-def load_config() -> dict:
-    with CONFIG_PATH.open("r", encoding="utf-8") as f:
-        return json.load(f)
+from core.config import (
+    MONITOR_REPORT_PATH,
+    PERFORMANCE_LOG_PATH,
+    RECALIBRATION_SIGNAL_PATH,
+    get_monitoring,
+    load_config,
+)
 
 
 def load_events() -> list[dict]:
-    if not PERF_LOG_PATH.exists():
+    if not PERFORMANCE_LOG_PATH.exists():
         return []
 
     events = []
-    with PERF_LOG_PATH.open("r", encoding="utf-8") as f:
+    with PERFORMANCE_LOG_PATH.open("r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -37,6 +25,8 @@ def load_events() -> list[dict]:
                 events.append(json.loads(line))
             except json.JSONDecodeError:
                 continue
+
+    events.sort(key=lambda event: int(event.get("concurso", 0)))
     return events
 
 
@@ -76,47 +66,38 @@ def evaluate_recalibration(recent: dict, baseline: dict, monitoring: dict) -> di
     recent_max_hits = float(recent["avg_max_hits"])
     recent_rate_ge4 = float(recent["rate_ge4"])
 
+    score_ratio = None
+    max_hits_ratio = None
+    ge4_ratio = None
+
     if baseline_score > 0:
         score_ratio = recent_score / baseline_score
         if score_ratio < float(monitoring["score_drop_ratio"]):
             reasons.append("score_drop")
-    else:
-        score_ratio = None
 
     if baseline_max_hits > 0:
         max_hits_ratio = recent_max_hits / baseline_max_hits
         if max_hits_ratio < float(monitoring["max_hits_drop_ratio"]):
             reasons.append("max_hits_drop")
-    else:
-        max_hits_ratio = None
 
     if baseline_rate_ge4 > 0:
         ge4_ratio = recent_rate_ge4 / baseline_rate_ge4
         if ge4_ratio < float(monitoring["ge4_drop_ratio"]):
             reasons.append("ge4_drop")
-    else:
-        ge4_ratio = None
-
-    should_recalibrate = len(reasons) > 0
 
     return {
-        "should_recalibrate": should_recalibrate,
+        "should_recalibrate": bool(reasons),
         "reasons": reasons,
         "ratios": {
             "score_ratio": round(score_ratio, 4) if score_ratio is not None else None,
-            "max_hits_ratio": round(max_hits_ratio, 4)
-            if max_hits_ratio is not None
-            else None,
+            "max_hits_ratio": round(max_hits_ratio, 4) if max_hits_ratio is not None else None,
             "ge4_ratio": round(ge4_ratio, 4) if ge4_ratio is not None else None,
         },
     }
 
 
 def build_monitor_report(config: dict, events: list[dict]) -> dict:
-    params = config.get("parameters", {})
-    monitoring = dict(DEFAULT_MONITORING)
-    monitoring.update(params.get("monitoring", {}))
-
+    monitoring = get_monitoring(config)
     total_events = len(events)
     min_draws_required = int(monitoring["min_draws_required"])
     recent_window = int(monitoring["recent_window"])
@@ -184,12 +165,10 @@ def main() -> None:
     with RECALIBRATION_SIGNAL_PATH.open("w", encoding="utf-8") as f:
         json.dump(signal, f, indent=2, ensure_ascii=False)
 
-    print(
-        "[MONITOR] OK:",
-        f"status={report['status']}",
-        f"should_recalibrate={signal['should_recalibrate']}",
-        f"reasons={signal['reasons']}",
-    )
+    status = report["status"]
+    should_recalibrate = signal["should_recalibrate"]
+    reasons = signal["reasons"]
+    print("[MONITOR] OK:", f"status={status}", f"should_recalibrate={should_recalibrate}", f"reasons={reasons}")
 
 
 if __name__ == "__main__":

@@ -1,34 +1,27 @@
+from __future__ import annotations
+
 import json
-from pathlib import Path
 
 import pandas as pd
 
 from core.compare_results import compute_hits
-from core.generator import (
-    DRAW_SIZE,
-    MAX_INTERSECTION,
-    N_GAMES,
-    N_SIM,
-    TICKET_SIZE,
-    build_probabilities_from_history,
-    generate_games_from_probs,
+from core.config import (
+    BACKTEST_REPORT_PATH as OUT_PATH,
+    DEFAULT_BACKTEST_N_SIM,
+    DEFAULT_MAX_INTERSECTION,
+    DEFAULT_MIN_HISTORY,
+    DEFAULT_N_SIM,
+    DEFAULT_NUM_GAMES,
+    DEFAULT_TICKET_SIZE,
+    DEFAULT_WINDOW,
+    RESULTS_PATH,
+    get_parameters,
+    load_config,
 )
+from core.generator import build_probabilities_from_history, generate_games_from_probs
 from core.versioning import _config_hash
 
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-RESULTS_PATH = REPO_ROOT / "data" / "results" / "megasena.csv"
-CONFIG_PATH = REPO_ROOT / "configs" / "strategy_config.json"
-OUT_PATH = REPO_ROOT / "out" / "backtest_report.json"
-
-DEFAULT_WINDOW = 100
-DEFAULT_MIN_HISTORY = 100
-DEFAULT_BACKTEST_N_SIM = 20
-
-
-def load_config() -> dict:
-    with CONFIG_PATH.open("r", encoding="utf-8") as f:
-        return json.load(f)
+DRAW_SIZE = 6
 
 
 def run_backtest(
@@ -36,17 +29,16 @@ def run_backtest(
     *,
     window: int = DEFAULT_WINDOW,
     min_history: int = DEFAULT_MIN_HISTORY,
-    n_games: int = N_GAMES,
-    ticket_size: int = TICKET_SIZE,
-    n_sim: int = N_SIM,
-    max_intersection: int = MAX_INTERSECTION,
+    n_games: int = DEFAULT_NUM_GAMES,
+    ticket_size: int = DEFAULT_TICKET_SIZE,
+    n_sim: int = DEFAULT_N_SIM,
+    max_intersection: int = DEFAULT_MAX_INTERSECTION,
     seed_base: int = 10_000,
 ) -> dict:
     if len(results_df) <= min_history:
-        raise ValueError("Histórico insuficiente para backtest.")
+        raise ValueError("Historico insuficiente para backtest.")
 
     per_draw = []
-
     for idx in range(min_history, len(results_df)):
         history = results_df.iloc[:idx].copy()
         target = results_df.iloc[idx]
@@ -62,10 +54,7 @@ def run_backtest(
         )
 
         draw_numbers = [int(target[f"d{i}"]) for i in range(1, DRAW_SIZE + 1)]
-        compare_input = [
-            (f"J{str(i + 1).zfill(2)}", game)
-            for i, game in enumerate(games)
-        ]
+        compare_input = [(f"J{str(i + 1).zfill(2)}", game) for i, game in enumerate(games)]
         result = compute_hits(set(draw_numbers), compare_input)
 
         per_draw.append(
@@ -106,15 +95,15 @@ def run_backtest(
 
 def main() -> None:
     config = load_config()
-    params = config.get("parameters", {})
+    params = get_parameters(config)
 
     results_df = pd.read_csv(RESULTS_PATH)
     window = int(params.get("window", DEFAULT_WINDOW))
     min_history = max(int(params.get("min_history", DEFAULT_MIN_HISTORY)), window)
-    n_games = int(params.get("num_games", N_GAMES))
-    ticket_size = int(params.get("ticket_size", TICKET_SIZE))
-    n_sim = int(params.get("backtest_n_sim", min(params.get("n_sim", N_SIM), DEFAULT_BACKTEST_N_SIM)))
-    max_intersection = int(params.get("max_intersection", MAX_INTERSECTION))
+    n_games = int(params.get("num_games", DEFAULT_NUM_GAMES))
+    ticket_size = int(params.get("ticket_size", DEFAULT_TICKET_SIZE))
+    n_sim = int(params.get("backtest_n_sim", min(int(params.get("n_sim", DEFAULT_N_SIM)), DEFAULT_BACKTEST_N_SIM)))
+    max_intersection = int(params.get("max_intersection", DEFAULT_MAX_INTERSECTION))
 
     report = run_backtest(
         results_df,
@@ -125,7 +114,6 @@ def main() -> None:
         n_sim=n_sim,
         max_intersection=max_intersection,
     )
-
     report["strategy"] = {
         "strategy_name": config.get("strategy_name"),
         "model_version": config.get("model_version"),
@@ -136,12 +124,11 @@ def main() -> None:
     with OUT_PATH.open("w", encoding="utf-8") as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
 
-    print(
-        "[BACKTEST] OK:",
-        f"draws={report['summary']['draws_evaluated']}",
-        f"avg_max_hits={report['summary']['avg_max_hits']}",
-        f"rate_ge4={report['summary']['rate_ge4']}",
-    )
+    summary = report["summary"]
+    draws = summary["draws_evaluated"]
+    avg_max_hits = summary["avg_max_hits"]
+    rate_ge4 = summary["rate_ge4"]
+    print("[BACKTEST] OK:", f"draws={draws}", f"avg_max_hits={avg_max_hits}", f"rate_ge4={rate_ge4}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,147 @@
+{
+  "generated_at_utc": "2026-03-25T13:51:55.190380+00:00",
+  "entries_audited": 14,
+  "all_entries_match_snapshots": true,
+  "rows": [
+    {
+      "concurso": 2974,
+      "data_sorteio": "19/02/2026",
+      "git_sha": "2c6c1a9ced68d91abf3037666c36590ad0f07df5",
+      "snapshot_source": "git_show",
+      "games_match_snapshot": true,
+      "max_hits": 2,
+      "score": 0,
+      "snapshot_path": "out/history/jogos_concurso_2974.json"
+    },
+    {
+      "concurso": 2975,
+      "data_sorteio": "21/02/2026",
+      "git_sha": "64e34755ca0ab3caffd4e144894d5f2f7d2ce6e0",
+      "snapshot_source": "git_show",
+      "games_match_snapshot": true,
+      "max_hits": 3,
+      "score": 0,
+      "snapshot_path": "out/history/jogos_concurso_2975.json"
+    },
+    {
+      "concurso": 2976,
+      "data_sorteio": "24/02/2026",
+      "git_sha": "d5b583c8cb451adb23e898c918dbb1391abdf06a",
+      "snapshot_source": "git_show",
+      "games_match_snapshot": true,
+      "max_hits": 1,
+      "score": 0,
+      "snapshot_path": "out/history/jogos_concurso_2976.json"
+    },
+    {
+      "concurso": 2977,
+      "data_sorteio": "26/02/2026",
+      "git_sha": "89c4e314a434f56860105a1f199fd261f5c0e77b",
+      "snapshot_source": "git_show",
+      "games_match_snapshot": true,
+      "max_hits": 2,
+      "score": 0,
+      "snapshot_path": "out/history/jogos_concurso_2977.json"
+    },
+    {
+      "concurso": 2978,
+      "data_sorteio": "28/02/2026",
+      "git_sha": "54fb9ce6def102c8d955f6ab302cf12baa852ac6",
+      "snapshot_source": "git_show",
+      "games_match_snapshot": true,
+      "max_hits": 2,
+      "score": 0,
+      "snapshot_path": "out/history/jogos_concurso_2978.json"
+    },
+    {
+      "concurso": 2979,
+      "data_sorteio": "03/03/2026",
+      "git_sha": "383e3b78a7cd21691d8dc357cc1419f9b7f1dd3a",
+      "snapshot_source": "git_show",
+      "games_match_snapshot": true,
+      "max_hits": 3,
+      "score": 0,
+      "snapshot_path": "out/history/jogos_concurso_2979.json"
+    },
+    {
+      "concurso": 2980,
+      "data_sorteio": "05/03/2026",
+      "git_sha": "c25cb82b48510c92137b4fb7cc0cf453f4a42dc8",
+      "snapshot_source": "git_show",
+      "games_match_snapshot": true,
+      "max_hits": 1,
+      "score": 0,
+      "snapshot_path": "out/history/jogos_concurso_2980.json"
+    },
+    {
+      "concurso": 2981,
+      "data_sorteio": "07/03/2026",
+      "git_sha": "738c6b31ade902408f69a0d7a4e7a150118fd367",
+      "snapshot_source": "git_show",
+      "games_match_snapshot": true,
+      "max_hits": 2,
+      "score": 0,
+      "snapshot_path": "out/history/jogos_concurso_2981.json"
+    },
+    {
+      "concurso": 2982,
+      "data_sorteio": "10/03/2026",
+      "git_sha": "787a06cb04593032a2e39aaef0e485f7a2359b94",
+      "snapshot_source": "git_show",
+      "games_match_snapshot": true,
+      "max_hits": 2,
+      "score": 0,
+      "snapshot_path": "out/history/jogos_concurso_2982.json"
+    },
+    {
+      "concurso": 2983,
+      "data_sorteio": "12/03/2026",
+      "git_sha": "0a49cd5c2190b855939733c7c56a69a838272bf7",
+      "snapshot_source": "git_show",
+      "games_match_snapshot": true,
+      "max_hits": 2,
+      "score": 0,
+      "snapshot_path": "out/history/jogos_concurso_2983.json"
+    },
+    {
+      "concurso": 2984,
+      "data_sorteio": "14/03/2026",
+      "git_sha": "b7cf7de64f2f09b6b152a07868a68f1bc2846761",
+      "snapshot_source": "git_show",
+      "games_match_snapshot": true,
+      "max_hits": 2,
+      "score": 0,
+      "snapshot_path": "out/history/jogos_concurso_2984.json"
+    },
+    {
+      "concurso": 2985,
+      "data_sorteio": "17/03/2026",
+      "git_sha": "4ce0a197947b4022ac281e88ef4e553d337bb114",
+      "snapshot_source": "git_show",
+      "games_match_snapshot": true,
+      "max_hits": 2,
+      "score": 0,
+      "snapshot_path": "out/history/jogos_concurso_2985.json"
+    },
+    {
+      "concurso": 2986,
+      "data_sorteio": "19/03/2026",
+      "git_sha": "049da10a2f12a7862394822fa0376b9ae9fc6149",
+      "snapshot_source": "git_show",
+      "games_match_snapshot": true,
+      "max_hits": 2,
+      "score": 0,
+      "snapshot_path": "out/history/jogos_concurso_2986.json"
+    },
+    {
+      "concurso": 2987,
+      "data_sorteio": "21/03/2026",
+      "git_sha": "c4e101d1686cecb8d5cf8e900d91f4ad327452f0",
+      "snapshot_source": "git_show",
+      "games_match_snapshot": true,
+      "max_hits": 2,
+      "score": 0,
+      "snapshot_path": "out/history/jogos_concurso_2987.json"
+    }
+  ]
+}
