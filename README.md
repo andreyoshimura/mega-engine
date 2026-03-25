@@ -1,310 +1,275 @@
-# 🎯 Mega Engine
+# Mega Engine
 
-Motor estatístico automatizado para geração, avaliação, versionamento e
-recalibração controlada de estratégias da Mega-Sena.
+Motor estatistico para geracao, comparacao, versionamento, backtest e monitoramento de estrategias da Mega-Sena.
 
-O projeto não busca "prever" resultados. O foco é construir um sistema
-auditável, mensurável e evolutivo para gerar combinações, comparar
-desempenho e promover ajustes de estratégia com base em histórico real.
+O projeto nao tenta prever sorteios. O objetivo e operar um pipeline auditavel que gera jogos para os concursos, registra exatamente quais jogos foram enviados, compara os acertos apos a divulgacao oficial e preserva historico suficiente para automacoes externas, analise e recalibracao controlada.
 
 ------------------------------------------------------------------------
 
-# 📌 Objetivo
+## Objetivo
 
-Criar uma engine modular que:
+A engine foi desenhada para:
 
--   Gere jogos automaticamente (9 dezenas por jogo)
--   Registre resultados oficiais automaticamente
--   Calcule acertos por concurso
--   Preserve histórico cumulativo
--   Versione automaticamente cada estratégia utilizada
--   Gere imagens institucionais automaticamente
--   Execute backtests walk-forward reproduzíveis
--   Otimize parâmetros da estratégia com base em histórico
--   Monitore queda de desempenho e sinalize recalibração
--   Integre facilmente com automações (GitHub Actions, n8n, Telegram,
-    redes sociais)
-
-Foco principal:
-
-> Maximizar consistência estatística, mensurar desempenho real e manter
-> evolução controlada da estratégia.
+- gerar jogos automaticamente nos dias de sorteio
+- registrar resultados oficiais e comparar acertos por concurso
+- preservar historico cumulativo e snapshots por concurso
+- versionar a estrategia ativa e seus parametros
+- executar backtests walk-forward reproduziveis
+- otimizar parametros por grid search
+- monitorar queda de desempenho e sinalizar recalibracao
+- alimentar automacoes externas, incluindo n8n, Instagram e Telegram
 
 ------------------------------------------------------------------------
 
-# ⚙️ Arquitetura Atual
+## Contrato com o n8n
 
-    mega-engine/
-    ├── core/
-    │   ├── ingest_megasena.py
-    │   ├── features_megasena.py
-    │   ├── generator.py
-    │   ├── compare_results.py
-    │   ├── versioning.py
-    │   ├── backtest.py
-    │   ├── optimize.py
-    │   ├── monitor_performance.py
-    │   └── image_generator.py
-    │
-    ├── configs/
-    │   └── strategy_config.json
-    │
-    ├── data/
-    │   ├── results/megasena.csv
-    │   ├── features/dezenas.csv
-    │   ├── performance_log.jsonl
-    │   ├── model_history.jsonl
-    │   └── last_result.json
-    │
-    ├── out/
-    │   ├── jogos_gerados.json
-    │   ├── backtest_report.json
-    │   ├── optimization_report.json
-    │   ├── recommended_strategy_config.json
-    │   ├── performance_monitor.json
-    │   ├── recalibration_signal.json
-    │   └── images/
-    │       ├── mega_atual.png
-    │       └── mega_semana_X.png
-    │
-    └── .github/workflows/
-        ├── daily_generate.yml
-        ├── compare_results.yml
-        ├── backtest.yml
-        ├── optimize.yml
-        └── generate_images.yml
+O n8n depende de dois fluxos principais:
+
+1. Antes do sorteio, ler [out/jogos_gerados.json](/media/msx/SD200/VSCODE/github/mega-engine/out/jogos_gerados.json) para enviar os jogos do concurso alvo.
+2. Depois da divulgacao oficial, ler [data/performance_log.jsonl](/media/msx/SD200/VSCODE/github/mega-engine/data/performance_log.jsonl) para publicar resultado x acertos.
+
+Para evitar comparacao com jogo errado, o projeto agora tambem grava snapshots imutaveis por concurso em [out/history](/media/msx/SD200/VSCODE/github/mega-engine/out/history), por exemplo [jogos_concurso_2987.json](/media/msx/SD200/VSCODE/github/mega-engine/out/history/jogos_concurso_2987.json).
+
+Regra operacional importante:
+
+- `out/jogos_gerados.json` representa o concurso alvo corrente
+- `out/history/jogos_concurso_<n>.json` representa a fonte canonica para comparar o concurso `n`
+- `core.compare_results` usa primeiro o snapshot do concurso; se ele nao existir e o arquivo corrente apontar para outro concurso, a execucao falha em vez de registrar um log incorreto
 
 ------------------------------------------------------------------------
 
-# 🔄 Fluxo Operacional
+## Estrutura
 
-## 1. Daily Generate
+```text
+mega-engine/
+├── core/
+│   ├── config.py
+│   ├── ingest_megasena.py
+│   ├── features_megasena.py
+│   ├── generator.py
+│   ├── compare_results.py
+│   ├── versioning.py
+│   ├── backtest.py
+│   ├── optimize.py
+│   ├── monitor_performance.py
+│   ├── image_generator.py
+│   └── audit_performance_log.py
+├── configs/
+│   └── strategy_config.json
+├── data/
+│   ├── results/megasena.csv
+│   ├── features/dezenas.csv
+│   ├── performance_log.jsonl
+│   ├── model_history.jsonl
+│   └── last_result.json
+├── out/
+│   ├── jogos_gerados.json
+│   ├── history/
+│   ├── backtest_report.json
+│   ├── optimization_report.json
+│   ├── recommended_strategy_config.json
+│   ├── performance_monitor.json
+│   ├── recalibration_signal.json
+│   ├── performance_audit.json
+│   └── images/
+├── tests/
+├── pyproject.toml
+└── .github/workflows/
+```
+
+------------------------------------------------------------------------
+
+## Fluxo Operacional
+
+### 1. Daily Generate
 
 Executa:
 
--   `core.ingest_megasena`
--   `core.features_megasena`
--   `core.generator`
+- `python -m core.ingest_megasena`
+- `python -m core.features_megasena`
+- `python -m core.generator`
 
 Atualiza:
 
--   `data/results/megasena.csv`
--   `data/features/dezenas.csv`
--   `out/jogos_gerados.json`
--   `data/model_history.jsonl`
+- [data/results/megasena.csv](/media/msx/SD200/VSCODE/github/mega-engine/data/results/megasena.csv)
+- [data/features/dezenas.csv](/media/msx/SD200/VSCODE/github/mega-engine/data/features/dezenas.csv)
+- [data/last_result.json](/media/msx/SD200/VSCODE/github/mega-engine/data/last_result.json)
+- [out/jogos_gerados.json](/media/msx/SD200/VSCODE/github/mega-engine/out/jogos_gerados.json)
+- [out/history](/media/msx/SD200/VSCODE/github/mega-engine/out/history)
+- [data/model_history.jsonl](/media/msx/SD200/VSCODE/github/mega-engine/data/model_history.jsonl)
 
-## 2. Compare Results
+### 2. Compare Results
 
 Executa:
 
--   `core.compare_results`
--   `core.monitor_performance`
+- `python -m core.compare_results`
+- `python -m core.monitor_performance`
 
 Atualiza:
 
--   `data/performance_log.jsonl`
--   `out/performance_monitor.json`
--   `out/recalibration_signal.json`
+- [data/performance_log.jsonl](/media/msx/SD200/VSCODE/github/mega-engine/data/performance_log.jsonl)
+- [out/performance_monitor.json](/media/msx/SD200/VSCODE/github/mega-engine/out/performance_monitor.json)
+- [out/recalibration_signal.json](/media/msx/SD200/VSCODE/github/mega-engine/out/recalibration_signal.json)
 
-## 3. Backtest
+### 3. Backtest
 
 Executa:
 
--   `core.backtest`
+- `python -m core.backtest`
 
 Atualiza:
 
--   `out/backtest_report.json`
+- [out/backtest_report.json](/media/msx/SD200/VSCODE/github/mega-engine/out/backtest_report.json)
 
-## 4. Optimize
+### 4. Optimize
 
 Executa:
 
--   `core.optimize`
+- `python -m core.optimize`
 
 Atualiza:
 
--   `out/optimization_report.json`
--   `out/recommended_strategy_config.json`
+- [out/optimization_report.json](/media/msx/SD200/VSCODE/github/mega-engine/out/optimization_report.json)
+- [out/recommended_strategy_config.json](/media/msx/SD200/VSCODE/github/mega-engine/out/recommended_strategy_config.json)
 
-## 5. Image Generation
+### 5. Image Generation
 
 Executa:
 
--   `core.image_generator`
+- `python -m core.image_generator`
 
 Atualiza:
 
--   `out/images/mega_atual.png`
--   `out/images/mega_semana_X.png`
+- [out/images/mega_atual.png](/media/msx/SD200/VSCODE/github/mega-engine/out/images/mega_atual.png)
+- [out/images/mega_semana_*.png](/media/msx/SD200/VSCODE/github/mega-engine/out/images)
 
 ------------------------------------------------------------------------
 
-# 📊 Estratégia Atual
+## Horarios e Datas dos Sorteios
 
-Configuração atualmente promovida:
+A referencia operacional e a data local de `America/Sao_Paulo`.
 
--   `ticket_size = 9`
--   `num_games = 6`
--   `window = 100`
--   `min_history = 100`
--   `max_intersection = 3`
--   `backtest_n_sim = 20`
+A Mega-Sena roda nas datas locais de sorteio:
 
-Monitoramento atual:
+- terca
+- quinta
+- sabado
 
--   `recent_window = 5`
--   `baseline_window = 20`
--   `min_draws_required = 12`
--   `score_drop_ratio = 0.5`
--   `max_hits_drop_ratio = 0.85`
--   `ge4_drop_ratio = 0.5`
+Os workflows foram documentados para seguir essa regra local:
 
-Grid atual de otimização:
+- [daily_generate.yml](/media/msx/SD200/VSCODE/github/mega-engine/.github/workflows/daily_generate.yml)
+  roda `03:00` em `America/Sao_Paulo` nas mesmas datas locais dos sorteios
+- [compare_results.yml](/media/msx/SD200/VSCODE/github/mega-engine/.github/workflows/compare_results.yml)
+  roda fallback `23:05` em `America/Sao_Paulo` nas mesmas datas locais dos sorteios, depois da divulgacao do resultado por volta das `22:00`
 
--   `window = [50, 100, 150]`
--   `num_games = [4, 5, 6]`
--   `max_intersection = [3, 4, 5]`
+Observacao importante:
+
+- o cron do GitHub Actions e sempre em UTC
+- por isso o fallback da comparacao aparece como `02:05` de quarta, sexta e domingo em UTC, embora corresponda a `23:05` do mesmo dia local do sorteio no Brasil
 
 ------------------------------------------------------------------------
 
-# 📊 Versionamento de Estratégia
+## Estrategia Atual
 
-Cada execução de produção registra:
+Configuracao promovida em [strategy_config.json](/media/msx/SD200/VSCODE/github/mega-engine/configs/strategy_config.json):
 
--   `strategy_name`
--   `model_version`
--   parâmetros utilizados
--   `config_hash`
--   `timestamp`
--   `execution_type`
--   `commit_sha`
+- `ticket_size = 9`
+- `num_games = 6`
+- `window = 100`
+- `min_history = 100`
+- `max_intersection = 3`
+- `backtest_n_sim = 20`
 
-Arquivo:
+Monitoramento:
 
-`data/model_history.jsonl`
+- `recent_window = 5`
+- `baseline_window = 20`
+- `min_draws_required = 12`
+- `score_drop_ratio = 0.5`
+- `max_hits_drop_ratio = 0.85`
+- `ge4_drop_ratio = 0.5`
 
-Garantias:
+Grid de otimizacao:
 
--   Append-only
--   Hash para evitar duplicidade imediata
--   Auditoria de mudanças de configuração
--   Histórico versionado via Git
-
-------------------------------------------------------------------------
-
-# ✅ Etapas Concluídas
-
-## Fase 1 --- Pipeline Operacional
-
-Concluído:
-
--   Ingestão automática com fallback entre API oficial e histórico
--   Geração de features básicas por frequência recente
--   Geração de jogos com diversidade estrutural
--   Comparação dos jogos com resultado oficial
--   Registro de performance em histórico append-only
--   Versionamento da estratégia em produção
--   Geração automática de imagens institucionais
--   Automação completa via GitHub Actions
-
-## Fase 2 --- Estrutura Estatística Base
-
-Concluído:
-
--   Backtest walk-forward automatizado
--   Otimização de parâmetros por grid search
--   Exportação de configuração recomendada
--   Monitoramento de queda de desempenho real
--   Sinal explícito de recalibração
--   Promoção manual controlada de nova configuração
+- `window = [50, 100, 150]`
+- `num_games = [4, 5, 6]`
+- `max_intersection = [3, 4, 5]`
 
 ------------------------------------------------------------------------
 
-# 🚧 Etapa Atual
+## Auditoria e Versionamento
 
-O projeto está atualmente em:
+Cada execucao de producao registra estrategia e parametros em [data/model_history.jsonl](/media/msx/SD200/VSCODE/github/mega-engine/data/model_history.jsonl).
 
-## Fase 2.5 --- Recalibração Controlada
+O historico de acertos fica em [data/performance_log.jsonl](/media/msx/SD200/VSCODE/github/mega-engine/data/performance_log.jsonl).
 
-Estado atual:
+A auditoria do log pode ser refeita com:
 
--   Pipeline operacional validado em produção
--   Backtest remoto validado no GitHub Actions
--   Otimização remota validada no GitHub Actions
--   Estratégia promovida com base em comparação histórica
--   Monitor pronto para indicar quando recalibrar
+```bash
+python -m core.audit_performance_log
+```
 
-Ainda em aberto nesta etapa:
+Esse comando:
 
--   Disparo automático de recalibração a partir do sinal de monitoramento
--   Processo formal de champion/challenger
--   Regra automática de promoção ou rejeição de estratégia candidata
-
-------------------------------------------------------------------------
-
-# 🚀 Próximas Etapas
-
-## Próxima Etapa Imediata
-
--   Criar workflow de recalibração controlada
--   Ler `out/recalibration_signal.json`
--   Rodar `optimize` apenas quando houver sinal
--   Comparar config atual vs config recomendada
--   Aprovar ou rejeitar promoção com critérios objetivos
-
-## Roadmap de Curto Prazo
-
--   Padronizar comparação entre estratégia `champion` e `challenger`
--   Criar relatório consolidado de promoção de estratégia
--   Incluir métricas de janela recente no backtest e na otimização
--   Adicionar guard de não-regressão antes de promover config nova
--   Reduzir custo computacional de backtest/optimize sem perder rastreabilidade
-
-## Roadmap de Médio Prazo
-
--   Feature engineering adicional:
-    - frequência curta vs longa
-    - atraso desde última aparição
-    - repetição em relação ao último concurso
-    - distribuição por faixas
-    - pares/ímpares
--   Score composto com pesos ajustáveis
--   Penalização explícita de combinações pouco desejáveis
--   Dashboard simplificado de performance
-
-## Roadmap de Longo Prazo
-
--   Modelos supervisionados para scoring de dezenas
--   Ensemble entre heurística e modelo estatístico/ML
--   Validação temporal mais robusta
--   Registro versionado de modelos treinados
--   Recalibração assistida por dados com promoção segura
+- reconcilia o log com os snapshots por concurso
+- reaplica o snapshot correto quando houver `git_sha` historico
+- recalcula `hits`, `hist_hits_count`, `score` e metadados derivados
+- gera [out/performance_audit.json](/media/msx/SD200/VSCODE/github/mega-engine/out/performance_audit.json)
 
 ------------------------------------------------------------------------
 
-# 🎛 Princípios do Projeto
+## Instalacao
 
--   Estatística \> Achismo
--   Métrica \> Intuição
--   Histórico \> Memória manual
--   Automação \> Operação manual
--   Reprodutibilidade \> Aleatoriedade não controlada
--   Promoção controlada \> ajuste impulsivo
+```bash
+python -m pip install --upgrade pip
+pip install .
+```
+
+Para desenvolvimento local:
+
+```bash
+python -m unittest discover -s tests -v
+```
 
 ------------------------------------------------------------------------
 
-# 📌 Status Atual
+## Validacao Operacional
 
-✔ Pipeline automatizado funcional\
-✔ Versionamento de estratégia ativo\
-✔ Histórico auditável\
-✔ Backtest automatizado\
-✔ Otimização automatizada\
-✔ Monitoramento de performance ativo\
-✔ Sinal de recalibração ativo\
-✔ Geração automática de imagens\
-✔ Promoção manual de estratégia validada
+Validacao local executada com sucesso:
 
-Mega Engine --- Estatística aplicada, mensuração real e evolução
-controlada.
+- `python3 -m unittest discover -s tests -v`
+- `python3 -m py_compile core/*.py tests/*.py`
+- `python3 -m core.features_megasena`
+- `python3 -m core.generator`
+- `python3 -m core.compare_results`
+- `python3 -m core.monitor_performance`
+- `python3 -m core.backtest`
+- `python3 -m core.optimize`
+- `python3 -m core.audit_performance_log`
+
+Limitacoes da validacao local:
+
+- `core.ingest_megasena` depende de API externa
+- `core.image_generator` depende de `OPENAI_API_KEY`
+
+------------------------------------------------------------------------
+
+## Estado Atual
+
+Concluido:
+
+- pipeline automatizado funcional
+- snapshots por concurso para blindar comparacao
+- historico auditavel e reprocessavel
+- backtest automatizado
+- otimizacao automatizada
+- monitoramento ativo
+- workflows do GitHub Actions alinhados ao horario local dos sorteios
+- integracao preparada para n8n, Instagram e Telegram
+
+Proximos passos naturais:
+
+- recalibracao controlada via workflow dedicado
+- champion/challenger formal
+- enriquecimento de features e score composto
+- documentacao operacional complementar para n8n
