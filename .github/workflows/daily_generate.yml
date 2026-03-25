@@ -2,6 +2,8 @@ name: Mega Daily Generate
 
 on:
   schedule:
+    # 03:00 em America/Sao_Paulo nas mesmas datas locais dos sorteios:
+    # tercas, quintas e sabados.
     - cron: "0 6 * * 2,4,6"
   workflow_dispatch:
 

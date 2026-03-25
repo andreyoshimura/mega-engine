@@ -6,7 +6,10 @@ on:
     types: [completed]
   workflow_dispatch:
   schedule:
-    - cron: "0 2 * * 3,5,0"
+    # Fallback no mesmo dia local do sorteio:
+    # 23:05 em America/Sao_Paulo nas tercas, quintas e sabados.
+    # Em UTC, isso corresponde a 02:05 nas quartas, sextas e domingos.
+    - cron: "5 2 * * 3,5,0"
 
 permissions:
   contents: write
