@@ -46,6 +46,11 @@ def _append_jsonl(path: Path, obj: dict[str, Any]) -> None:
         f.write(json.dumps(obj, ensure_ascii=False) + "\n")
 
 
+def _draw_date_to_timestamp_utc(draw_date: str) -> str:
+    parsed = datetime.strptime(str(draw_date), "%d/%m/%Y")
+    return parsed.replace(tzinfo=timezone.utc).isoformat()
+
+
 def _parse_int_list(x: Any) -> list[int]:
     if not isinstance(x, list):
         return []
@@ -222,8 +227,9 @@ def main() -> None:
     result = compute_hits(draw_set, games)
     rolling_20 = summarize_recent_events(window=20)
 
+    logged_at_utc = datetime.now(timezone.utc).isoformat()
     event = {
-        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "timestamp_utc": _draw_date_to_timestamp_utc(latest.data),
         "game": GAME_NAME,
         "concurso": latest.concurso,
         "data_sorteio": latest.data,
@@ -236,6 +242,7 @@ def main() -> None:
             "model_version": generated_meta["metadata"].get("model_version"),
             "generated_at_utc": generated_meta["metadata"].get("generated_at_utc"),
             "target_concurso": generated_meta["metadata"].get("target_concurso"),
+            "logged_at_utc": logged_at_utc,
         },
         **result["summary"],
         "games": result["per_game"],

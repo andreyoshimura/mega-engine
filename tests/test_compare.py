@@ -1,9 +1,12 @@
 import unittest
 
-from core.compare_results import compute_hits
+from core.compare_results import _draw_date_to_timestamp_utc, compute_hits
 
 
 class CompareTests(unittest.TestCase):
+    def test_draw_date_to_timestamp_utc_normalizes_to_same_draw_day(self):
+        self.assertEqual(_draw_date_to_timestamp_utc("26/03/2026"), "2026-03-26T00:00:00+00:00")
+
     def test_compute_hits_builds_summary_and_histogram(self):
         draw_set = {1, 2, 3, 4, 5, 6}
         games = [
