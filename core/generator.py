@@ -6,6 +6,7 @@ Gera jogos estatisticos preservando o contrato JSON usado pela automacao.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -196,6 +197,27 @@ def _load_last_result() -> dict[str, Any] | None:
         return json.load(f)
 
 
+def derive_generation_seed(config: dict[str, Any], last_result: dict[str, Any] | None = None) -> int:
+    params = get_parameters(config)
+    last_result = last_result if last_result is not None else _load_last_result()
+
+    latest_concurso = None
+    target_concurso = None
+    if isinstance(last_result, dict) and "concurso" in last_result:
+        latest_concurso = int(last_result["concurso"])
+        target_concurso = latest_concurso + 1
+
+    seed_payload = {
+        "strategy_name": config.get("strategy_name"),
+        "model_version": config.get("model_version"),
+        "parameters": params,
+        "latest_concurso": latest_concurso,
+        "target_concurso": target_concurso,
+    }
+    digest = hashlib.sha256(json.dumps(seed_payload, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+    return int(digest[:16], 16)
+
+
 def build_output_payload(games: list[list[int]], config: dict[str, Any]) -> dict[str, Any]:
     params = get_parameters(config)
     ticket_size = int(params.get("ticket_size", TICKET_SIZE))
@@ -203,6 +225,7 @@ def build_output_payload(games: list[list[int]], config: dict[str, Any]) -> dict
     last_result = _load_last_result()
     latest_concurso = None
     next_concurso = None
+    generation_seed = derive_generation_seed(config, last_result)
 
     if isinstance(last_result, dict) and "concurso" in last_result:
         latest_concurso = int(last_result["concurso"])
@@ -225,6 +248,7 @@ def build_output_payload(games: list[list[int]], config: dict[str, Any]) -> dict
             "source_features": str(FEATURES_PATH.relative_to(REPO_ROOT)),
             "latest_known_concurso": latest_concurso,
             "target_concurso": next_concurso,
+            "generation_seed": generation_seed,
             "config_path": str(CONFIG_PATH.relative_to(REPO_ROOT)),
         },
     }
@@ -249,6 +273,6 @@ def export_json(games: list[list[int]], config: dict[str, Any] | None = None) ->
 
 if __name__ == "__main__":
     config = load_config()
-    games = generate_games(config=config)
+    games = generate_games(seed=derive_generation_seed(config), config=config)
     export_json(games, config=config)
     register_strategy(config, execution_type="production")
