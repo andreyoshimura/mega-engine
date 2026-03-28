@@ -32,6 +32,25 @@ jobs:
           python -m pip install --upgrade pip
           pip install .
 
+      - name: Prepare CI recalibration config
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("configs/strategy_config.json")
+          config = json.loads(path.read_text(encoding="utf-8"))
+          params = config.setdefault("parameters", {})
+          params["backtest_n_sim"] = 10
+          params["optimization_grid"] = {
+              "window": [100],
+              "num_games": [5, 6],
+              "max_intersection": [3, 4],
+          }
+          path.write_text(json.dumps(config, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+          print("[CI] Reduced optimization grid for workflow run.")
+          PY
+
       - name: Run recalibration pipeline
         run: |
           python -m core.backtest
