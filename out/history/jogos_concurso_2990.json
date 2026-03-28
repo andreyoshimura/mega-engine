@@ -8,95 +8,115 @@
     {
       "id": "J01",
       "numbers": [
-        4,
-        27,
+        1,
+        9,
+        10,
         32,
         37,
-        43,
-        47,
-        51,
-        58,
+        46,
+        52,
+        54,
         60
       ]
     },
     {
       "id": "J02",
       "numbers": [
-        10,
+        4,
+        8,
+        13,
         27,
-        34,
-        35,
-        38,
-        45,
-        52,
-        55,
-        60
+        42,
+        44,
+        46,
+        53,
+        56
       ]
     },
     {
       "id": "J03",
       "numbers": [
-        15,
-        17,
-        19,
-        20,
+        3,
+        10,
+        14,
+        28,
+        33,
         35,
-        38,
-        39,
-        47,
-        52
+        40,
+        41,
+        42
       ]
     },
     {
       "id": "J04",
       "numbers": [
         6,
-        17,
-        20,
-        36,
-        37,
-        45,
-        46,
-        49,
-        52
+        11,
+        15,
+        27,
+        29,
+        30,
+        38,
+        40,
+        54
       ]
     },
     {
       "id": "J05",
       "numbers": [
-        6,
-        14,
-        15,
+        9,
+        13,
         16,
-        21,
+        24,
+        36,
         38,
-        40,
-        42,
-        53
+        39,
+        41,
+        47
       ]
     },
     {
       "id": "J06",
       "numbers": [
-        3,
-        8,
+        6,
+        7,
         10,
         17,
-        21,
-        28,
-        49,
-        55,
-        58
+        18,
+        24,
+        31,
+        34,
+        53
       ]
     }
   ],
   "metadata": {
-    "generated_at_utc": "2026-03-28T01:19:14.296063+00:00",
+    "generated_at_utc": "2026-03-28T07:05:51.721718+00:00",
     "strategy_name": "megasena_v1",
     "model_version": "1.0.1",
     "source_features": "data/features/dezenas.csv",
     "latest_known_concurso": 2989,
     "target_concurso": 2990,
+    "generation_seed": 13568984967246888578,
+    "bayesian": {
+      "alpha_prior": 1.0,
+      "beta_prior": 9.0
+    },
+    "feature_weights": {
+      "freq_20": 0.0,
+      "freq_50": 0.0,
+      "freq_100": 1.0,
+      "atraso_score": 0.8,
+      "bayes_mean": 1.0,
+      "bayes_score": 0.7,
+      "score_alpha": 2.1
+    },
+    "structural_rules": {
+      "bottom_pairs": 60,
+      "max_seq": 5,
+      "min_diff": 8,
+      "penalty_weak_pair": 5
+    },
     "config_path": "configs/strategy_config.json"
   }
 }
