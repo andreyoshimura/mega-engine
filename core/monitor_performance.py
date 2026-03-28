@@ -22,12 +22,31 @@ def load_events() -> list[dict]:
             if not line:
                 continue
             try:
-                events.append(json.loads(line))
+                event = json.loads(line)
             except json.JSONDecodeError:
                 continue
+            if is_canonical_event(event):
+                events.append(event)
 
     events.sort(key=lambda event: int(event.get("concurso", 0)))
     return events
+
+
+def is_canonical_event(event: dict) -> bool:
+    if int(event.get("n_games", 0)) <= 0:
+        return False
+
+    meta = event.get("meta", {})
+    if not isinstance(meta, dict):
+        meta = {}
+
+    if bool(meta.get("manual_patch")):
+        return False
+
+    if str(meta.get("snapshot_source", "")).strip() == "manual_patch_noncanonical":
+        return False
+
+    return True
 
 
 def summarize_window(events: list[dict]) -> dict:

@@ -82,6 +82,8 @@ def build_learning_decision(
     should_recalibrate = bool((monitor_report or {}).get("decision", {}).get("should_recalibrate", False))
     should_promote = bool((promotion_decision or {}).get("decision", {}).get("should_promote", False))
     require_signal = bool(learning.get("require_recalibration_signal", True))
+    current_hash = _config_hash(current_config)
+    recommended_hash = _config_hash(recommended_config) if recommended_config is not None else None
 
     reasons: list[str] = []
     next_config = deepcopy(current_config)
@@ -89,6 +91,8 @@ def build_learning_decision(
 
     if recommended_config is None or promotion_decision is None:
         reasons.append("missing_recommendation_artifacts")
+    elif recommended_hash == current_hash:
+        reasons.append("no_effective_change")
     elif require_signal and not should_recalibrate:
         reasons.append("waiting_recalibration_signal")
     elif should_promote:
@@ -109,11 +113,11 @@ def build_learning_decision(
         "reasons": reasons,
         "should_recalibrate": should_recalibrate,
         "should_promote": should_promote,
-        "current_config_hash": _config_hash(current_config),
+        "current_config_hash": current_hash,
         "next_config_hash": _config_hash(next_config),
         "current_config": current_config,
         "next_config": next_config,
-        "recommended_config_hash": _config_hash(recommended_config) if recommended_config is not None else None,
+        "recommended_config_hash": recommended_hash,
         "monitor_status": (monitor_report or {}).get("status"),
         "promotion_summary": (promotion_decision or {}).get("decision"),
     }

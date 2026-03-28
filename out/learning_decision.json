@@ -1,14 +1,13 @@
 {
-  "timestamp_utc": "2026-03-28T03:40:05.492275+00:00",
-  "action": "promote_incremental",
+  "timestamp_utc": "2026-03-28T03:55:18.263390+00:00",
+  "action": "hold_current",
   "reasons": [
-    "promotion_guard_passed",
-    "recalibration_signal_active"
+    "no_effective_change"
   ],
-  "should_recalibrate": true,
+  "should_recalibrate": false,
   "should_promote": true,
   "current_config_hash": "47fb35ea7add433db64fef557092fb7f01b46b0206e965c76bca8f4910eb6e6f",
-  "next_config_hash": "4cab785a07708fc20d540f05830baff391d78af6015771c99fb86b80d7f5041a",
+  "next_config_hash": "47fb35ea7add433db64fef557092fb7f01b46b0206e965c76bca8f4910eb6e6f",
   "current_config": {
     "strategy_name": "megasena_v1",
     "model_version": "1.0.1",
@@ -145,8 +144,7 @@
           5
         ]
       }
-    },
-    "notes": "incremental_learning_promotion"
+    }
   },
   "recommended_config_hash": "47fb35ea7add433db64fef557092fb7f01b46b0206e965c76bca8f4910eb6e6f",
   "monitor_status": "ok",

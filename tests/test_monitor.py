@@ -1,9 +1,15 @@
 import unittest
 
-from core.monitor_performance import build_monitor_report
+from core.monitor_performance import build_monitor_report, is_canonical_event
 
 
 class MonitorTests(unittest.TestCase):
+    def test_is_canonical_event_rejects_manual_patch_and_empty_games(self):
+        self.assertFalse(is_canonical_event({"n_games": 0}))
+        self.assertFalse(is_canonical_event({"n_games": 1, "meta": {"manual_patch": True}}))
+        self.assertFalse(is_canonical_event({"n_games": 1, "meta": {"snapshot_source": "manual_patch_noncanonical"}}))
+        self.assertTrue(is_canonical_event({"n_games": 1, "meta": {"snapshot_source": "performance_log"}}))
+
     def test_build_monitor_report_flags_drop(self):
         config = {
             "strategy_name": "megasena_v1",

@@ -105,6 +105,41 @@ class LearningTests(unittest.TestCase):
         self.assertIn("recalibration_signal_active", decision["reasons"])
         self.assertEqual(decision["next_config"]["parameters"]["window"], 150)
 
+    def test_learning_decision_holds_when_recommendation_equals_current(self):
+        current = {
+            "strategy_name": "megasena_v1",
+            "model_version": "1.0.0",
+            "parameters": {
+                "feature_weights": {"freq_100": 1.0},
+                "learning": {
+                    "feature_weight_step_ratio": 0.25,
+                    "bayesian_step_ratio": 0.2,
+                    "allow_parameter_promotion": True,
+                    "require_recalibration_signal": True,
+                },
+            },
+        }
+        recommended = {
+            "strategy_name": "megasena_v1",
+            "model_version": "1.0.0",
+            "parameters": {
+                "feature_weights": {"freq_100": 1.0},
+                "learning": {
+                    "feature_weight_step_ratio": 0.25,
+                    "bayesian_step_ratio": 0.2,
+                    "allow_parameter_promotion": True,
+                    "require_recalibration_signal": True,
+                },
+            },
+        }
+        promotion_decision = {"decision": {"should_promote": True, "reasons": ["promotion_guard_passed"]}}
+        monitor_report = {"status": "ok", "decision": {"should_recalibrate": True}}
+
+        decision = build_learning_decision(current, recommended, promotion_decision, monitor_report)
+
+        self.assertEqual(decision["action"], "hold_current")
+        self.assertIn("no_effective_change", decision["reasons"])
+
 
 if __name__ == "__main__":
     unittest.main()
