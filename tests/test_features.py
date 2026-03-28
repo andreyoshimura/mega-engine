@@ -18,6 +18,21 @@ class FeaturesTests(unittest.TestCase):
         freq_3 = float(features.loc[features["dezena"] == 3, "freq_100"].iloc[0])
         self.assertEqual(freq_1, 1.0)
         self.assertEqual(freq_3, 0.0)
+        self.assertIn("bayes_mean", features.columns)
+        self.assertIn("bayes_var", features.columns)
+        self.assertIn("bayes_score", features.columns)
+
+    def test_build_features_bayesian_signal_respects_recent_draws(self):
+        df = pd.DataFrame(
+            [
+                {"concurso": 1, "data": "01/01/2026", "d1": 1, "d2": 2, "d3": 3, "d4": 4, "d5": 5, "d6": 6},
+                {"concurso": 2, "data": "02/01/2026", "d1": 1, "d2": 7, "d3": 8, "d4": 9, "d5": 10, "d6": 11},
+            ]
+        )
+        features = build_features(df, window=2, alpha_prior=1.0, beta_prior=9.0)
+        bayes_1 = float(features.loc[features["dezena"] == 1, "bayes_mean"].iloc[0])
+        bayes_12 = float(features.loc[features["dezena"] == 12, "bayes_mean"].iloc[0])
+        self.assertGreater(bayes_1, bayes_12)
 
 
 if __name__ == "__main__":

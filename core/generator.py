@@ -29,7 +29,9 @@ from core.config import (
     OUT_GAMES_PATH,
     OUT_HISTORY_DIR,
     REPO_ROOT,
+    get_bayesian,
     get_draw_size,
+    get_feature_weights,
     get_parameters,
     load_config,
 )
@@ -87,30 +89,29 @@ def _normalize_scores(scores: np.ndarray) -> np.ndarray:
     return scores / total
 
 
-def load_probs(features_path: Path = FEATURES_PATH) -> np.ndarray:
+def load_probs(features_path: Path = FEATURES_PATH, config: dict[str, Any] | None = None) -> np.ndarray:
     if not features_path.exists():
         return np.ones(MAX_N) / MAX_N
 
     df = pd.read_csv(features_path)
-    if "freq_100" not in df.columns:
+    return scores_from_features(df, config=config)
+
+
+def scores_from_features(features_df: pd.DataFrame, config: dict[str, Any] | None = None) -> np.ndarray:
+    if "freq_100" not in features_df.columns and "bayes_score" not in features_df.columns:
         return np.ones(MAX_N) / MAX_N
 
-    scores = df["freq_100"].astype(float).values
-    if "dezena" in df.columns:
-        probs = np.zeros(MAX_N)
-        for d, s in zip(df["dezena"].astype(int), scores):
-            if MIN_N <= d <= MAX_N:
-                probs[d - 1] = float(s)
-        scores = probs
+    config = config or load_config()
+    weights = get_feature_weights(config)
 
-    return _normalize_scores(scores)
+    scores = np.zeros(len(features_df), dtype=float)
+    if "freq_100" in features_df.columns:
+        scores += float(weights.get("freq_100", 0.0)) * features_df["freq_100"].astype(float).values
+    if "bayes_mean" in features_df.columns:
+        scores += float(weights.get("bayes_mean", 0.0)) * features_df["bayes_mean"].astype(float).values
+    if "bayes_score" in features_df.columns:
+        scores += float(weights.get("bayes_score", 0.0)) * features_df["bayes_score"].astype(float).values
 
-
-def scores_from_features(features_df: pd.DataFrame) -> np.ndarray:
-    if "freq_100" not in features_df.columns:
-        return np.ones(MAX_N) / MAX_N
-
-    scores = features_df["freq_100"].astype(float).values
     if "dezena" in features_df.columns:
         ordered_scores = np.zeros(MAX_N)
         for d, s in zip(features_df["dezena"].astype(int), scores):
@@ -121,9 +122,21 @@ def scores_from_features(features_df: pd.DataFrame) -> np.ndarray:
     return _normalize_scores(scores)
 
 
-def build_probabilities_from_history(results_df: pd.DataFrame, window: int = 100) -> np.ndarray:
-    features_df = build_features(results_df, window=window)
-    return scores_from_features(features_df)
+def build_probabilities_from_history(
+    results_df: pd.DataFrame,
+    window: int = 100,
+    *,
+    config: dict[str, Any] | None = None,
+) -> np.ndarray:
+    config = config or load_config()
+    bayesian = get_bayesian(config)
+    features_df = build_features(
+        results_df,
+        window=window,
+        alpha_prior=float(bayesian["alpha_prior"]),
+        beta_prior=float(bayesian["beta_prior"]),
+    )
+    return scores_from_features(features_df, config=config)
 
 
 def generate_games_from_probs(
@@ -179,7 +192,7 @@ def generate_games_from_probs(
 def generate_games(seed: int | None = None, config: dict[str, Any] | None = None) -> list[list[int]]:
     config = config or load_config()
     params = get_parameters(config)
-    probs = load_probs()
+    probs = load_probs(config=config)
     return generate_games_from_probs(
         probs,
         seed=seed,
@@ -226,6 +239,8 @@ def build_output_payload(games: list[list[int]], config: dict[str, Any]) -> dict
     latest_concurso = None
     next_concurso = None
     generation_seed = derive_generation_seed(config, last_result)
+    bayesian = get_bayesian(config)
+    feature_weights = get_feature_weights(config)
 
     if isinstance(last_result, dict) and "concurso" in last_result:
         latest_concurso = int(last_result["concurso"])
@@ -249,6 +264,8 @@ def build_output_payload(games: list[list[int]], config: dict[str, Any]) -> dict
             "latest_known_concurso": latest_concurso,
             "target_concurso": next_concurso,
             "generation_seed": generation_seed,
+            "bayesian": bayesian,
+            "feature_weights": feature_weights,
             "config_path": str(CONFIG_PATH.relative_to(REPO_ROOT)),
         },
     }

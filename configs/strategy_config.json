@@ -8,6 +8,15 @@
     "min_history": 100,
     "max_intersection": 3,
     "backtest_n_sim": 20,
+    "bayesian": {
+      "alpha_prior": 1.0,
+      "beta_prior": 9.0
+    },
+    "feature_weights": {
+      "freq_100": 1.0,
+      "bayes_mean": 1.0,
+      "bayes_score": 0.0
+    },
     "monitoring": {
       "recent_window": 5,
       "baseline_window": 20,

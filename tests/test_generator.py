@@ -1,8 +1,9 @@
 import unittest
 
 import numpy as np
+import pandas as pd
 
-from core.generator import build_output_payload, generate_games_from_probs
+from core.generator import build_output_payload, generate_games_from_probs, scores_from_features
 
 
 class GeneratorTests(unittest.TestCase):
@@ -21,6 +22,26 @@ class GeneratorTests(unittest.TestCase):
         self.assertEqual(payload["game"], "megasena")
         self.assertEqual(payload["games"][0]["id"], "J01")
         self.assertEqual(payload["metadata"]["strategy_name"], "megasena_v1")
+        self.assertIn("generation_seed", payload["metadata"])
+
+    def test_scores_from_features_combines_freq_and_bayesian_weights(self):
+        features = pd.DataFrame(
+            [
+                {"dezena": 1, "freq_100": 10.0, "bayes_mean": 0.05, "bayes_score": 0.04},
+                {"dezena": 2, "freq_100": 1.0, "bayes_mean": 0.50, "bayes_score": 0.49},
+            ]
+        )
+        config = {
+            "parameters": {
+                "feature_weights": {
+                    "freq_100": 0.0,
+                    "bayes_mean": 1.0,
+                    "bayes_score": 0.0,
+                }
+            }
+        }
+        probs = scores_from_features(features, config=config)
+        self.assertGreater(probs[1], probs[0])
 
 
 if __name__ == "__main__":

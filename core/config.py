@@ -33,6 +33,14 @@ DEFAULT_N_SIM = 5000
 DEFAULT_MAX_INTERSECTION = 4
 DEFAULT_MIN_HISTORY = 100
 DEFAULT_BACKTEST_N_SIM = 20
+DEFAULT_BAYESIAN = {
+    "alpha_prior": 1.0,
+    "beta_prior": 9.0,
+}
+DEFAULT_FEATURE_WEIGHTS = {
+    "freq_100": 1.0,
+    "bayes_mean": 1.0,
+}
 
 DEFAULT_MONITORING = {
     "recent_window": 5,
@@ -83,6 +91,18 @@ def get_monitoring(config: dict[str, Any]) -> dict[str, Any]:
     monitoring = dict(DEFAULT_MONITORING)
     monitoring.update(get_parameters(config).get("monitoring", {}))
     return monitoring
+
+
+def get_bayesian(config: dict[str, Any]) -> dict[str, Any]:
+    bayesian = dict(DEFAULT_BAYESIAN)
+    bayesian.update(get_parameters(config).get("bayesian", {}))
+    return bayesian
+
+
+def get_feature_weights(config: dict[str, Any]) -> dict[str, Any]:
+    weights = dict(DEFAULT_FEATURE_WEIGHTS)
+    weights.update(get_parameters(config).get("feature_weights", {}))
+    return weights
 
 
 def get_optimization_grid(config: dict[str, Any]) -> dict[str, Any]:
