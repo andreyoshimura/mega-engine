@@ -4,7 +4,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 
-from core.backtest import build_probability_cache, build_weak_pair_cache, run_backtest
+from core.backtest import build_probability_cache, build_weak_pair_cache, run_backtest, slice_results_for_backtest
 
 
 def _sample_results_df() -> pd.DataFrame:
@@ -18,6 +18,22 @@ def _sample_results_df() -> pd.DataFrame:
 
 
 class BacktestTests(unittest.TestCase):
+    def test_slice_results_for_backtest_limits_recent_rows(self):
+        results_df = _sample_results_df()
+
+        limited = slice_results_for_backtest(results_df, min_history=2, max_draws=3)
+
+        self.assertEqual(len(limited), 3)
+        self.assertEqual(list(limited["concurso"]), [4, 5, 6])
+
+    def test_slice_results_for_backtest_respects_minimum_history(self):
+        results_df = _sample_results_df()
+
+        limited = slice_results_for_backtest(results_df, min_history=4, max_draws=2)
+
+        self.assertEqual(len(limited), 5)
+        self.assertEqual(list(limited["concurso"]), [2, 3, 4, 5, 6])
+
     def test_build_probability_cache_builds_entries_per_window(self):
         results_df = _sample_results_df()
 

@@ -5,7 +5,7 @@ from itertools import product
 
 import pandas as pd
 
-from core.backtest import build_probability_cache, build_weak_pair_cache, run_backtest
+from core.backtest import build_probability_cache, build_weak_pair_cache, run_backtest, slice_results_for_backtest
 from core.config import (
     DEFAULT_BACKTEST_N_SIM,
     DEFAULT_MIN_HISTORY,
@@ -57,6 +57,12 @@ def run_optimization(results_df: pd.DataFrame, config: dict) -> dict:
     params = get_parameters(config)
     ticket_size = int(params.get("ticket_size", DEFAULT_TICKET_SIZE))
     min_history = int(params.get("min_history", DEFAULT_MIN_HISTORY))
+    optimization_history_limit = params.get("optimization_history_limit")
+    results_df = slice_results_for_backtest(
+        results_df,
+        min_history=min_history,
+        max_draws=int(optimization_history_limit) if optimization_history_limit is not None else None,
+    )
     backtest_n_sim = int(params.get("backtest_n_sim", DEFAULT_BACKTEST_N_SIM))
     current_window = int(params.get("window", min_history))
     current_num_games = int(params.get("num_games", DEFAULT_NUM_GAMES))

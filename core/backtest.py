@@ -27,6 +27,22 @@ from core.versioning import _config_hash
 DRAW_SIZE = 6
 
 
+def slice_results_for_backtest(
+    results_df: pd.DataFrame,
+    *,
+    min_history: int,
+    max_draws: int | None,
+) -> pd.DataFrame:
+    if max_draws is None or max_draws <= 0:
+        return results_df
+
+    minimum_rows = int(min_history) + 1
+    keep_rows = max(int(max_draws), minimum_rows)
+    if len(results_df) <= keep_rows:
+        return results_df
+    return results_df.tail(keep_rows).reset_index(drop=True)
+
+
 def build_probability_cache(
     results_df: pd.DataFrame,
     *,
@@ -186,9 +202,15 @@ def main() -> None:
     config = load_config()
     params = get_parameters(config)
 
-    results_df = pd.read_csv(RESULTS_PATH)
+    raw_results_df = pd.read_csv(RESULTS_PATH)
     window = int(params.get("window", DEFAULT_WINDOW))
     min_history = max(int(params.get("min_history", DEFAULT_MIN_HISTORY)), window)
+    backtest_history_limit = params.get("backtest_history_limit")
+    results_df = slice_results_for_backtest(
+        raw_results_df,
+        min_history=min_history,
+        max_draws=int(backtest_history_limit) if backtest_history_limit is not None else None,
+    )
     n_games = int(params.get("num_games", DEFAULT_NUM_GAMES))
     ticket_size = int(params.get("ticket_size", DEFAULT_TICKET_SIZE))
     n_sim = int(params.get("backtest_n_sim", min(int(params.get("n_sim", DEFAULT_N_SIM)), DEFAULT_BACKTEST_N_SIM)))
@@ -215,6 +237,8 @@ def main() -> None:
         "strategy_name": config.get("strategy_name"),
         "model_version": config.get("model_version"),
         "config_hash": _config_hash(config),
+        "source_draws_available": len(raw_results_df),
+        "source_draws_used": len(results_df),
     }
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
