@@ -27,21 +27,52 @@ class GeneratorTests(unittest.TestCase):
     def test_scores_from_features_combines_freq_and_bayesian_weights(self):
         features = pd.DataFrame(
             [
-                {"dezena": 1, "freq_100": 10.0, "bayes_mean": 0.05, "bayes_score": 0.04},
-                {"dezena": 2, "freq_100": 1.0, "bayes_mean": 0.50, "bayes_score": 0.49},
+                {
+                    "dezena": 1,
+                    "freq_20": 0.0,
+                    "freq_50": 0.0,
+                    "freq_100": 10.0,
+                    "atraso_score": 0.1,
+                    "bayes_mean": 0.05,
+                    "bayes_score": 0.04,
+                },
+                {
+                    "dezena": 2,
+                    "freq_20": 3.0,
+                    "freq_50": 2.0,
+                    "freq_100": 1.0,
+                    "atraso_score": 0.9,
+                    "bayes_mean": 0.50,
+                    "bayes_score": 0.49,
+                },
             ]
         )
         config = {
             "parameters": {
                 "feature_weights": {
+                    "freq_20": 1.0,
+                    "freq_50": 0.5,
                     "freq_100": 0.0,
+                    "atraso_score": 1.0,
                     "bayes_mean": 1.0,
                     "bayes_score": 0.0,
+                    "score_alpha": 1.0,
                 }
             }
         }
         probs = scores_from_features(features, config=config)
         self.assertGreater(probs[1], probs[0])
+
+    def test_scores_from_features_applies_score_alpha(self):
+        features = pd.DataFrame(
+            [
+                {"dezena": 1, "freq_20": 1.0, "freq_50": 0.0, "freq_100": 0.0, "atraso_score": 0.0, "bayes_mean": 0.0, "bayes_score": 0.0},
+                {"dezena": 2, "freq_20": 2.0, "freq_50": 0.0, "freq_100": 0.0, "atraso_score": 0.0, "bayes_mean": 0.0, "bayes_score": 0.0},
+            ]
+        )
+        linear = scores_from_features(features, config={"parameters": {"feature_weights": {"freq_20": 1.0, "score_alpha": 1.0}}})
+        aggressive = scores_from_features(features, config={"parameters": {"feature_weights": {"freq_20": 1.0, "score_alpha": 2.0}}})
+        self.assertGreater(aggressive[1] - aggressive[0], linear[1] - linear[0])
 
 
 if __name__ == "__main__":

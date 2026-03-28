@@ -43,9 +43,13 @@ DEFAULT_BAYESIAN = {
     "beta_prior": 9.0,
 }
 DEFAULT_FEATURE_WEIGHTS = {
+    "freq_20": 0.0,
+    "freq_50": 0.0,
     "freq_100": 1.0,
+    "atraso_score": 0.0,
     "bayes_mean": 1.0,
     "bayes_score": 0.0,
+    "score_alpha": 1.0,
 }
 DEFAULT_PROMOTION_GUARD = {
     "min_improvement_score": 0.0,

@@ -105,12 +105,22 @@ def scores_from_features(features_df: pd.DataFrame, config: dict[str, Any] | Non
     weights = get_feature_weights(config)
 
     scores = np.zeros(len(features_df), dtype=float)
+    if "freq_20" in features_df.columns:
+        scores += float(weights.get("freq_20", 0.0)) * features_df["freq_20"].astype(float).values
+    if "freq_50" in features_df.columns:
+        scores += float(weights.get("freq_50", 0.0)) * features_df["freq_50"].astype(float).values
     if "freq_100" in features_df.columns:
         scores += float(weights.get("freq_100", 0.0)) * features_df["freq_100"].astype(float).values
+    if "atraso_score" in features_df.columns:
+        scores += float(weights.get("atraso_score", 0.0)) * features_df["atraso_score"].astype(float).values
     if "bayes_mean" in features_df.columns:
         scores += float(weights.get("bayes_mean", 0.0)) * features_df["bayes_mean"].astype(float).values
     if "bayes_score" in features_df.columns:
         scores += float(weights.get("bayes_score", 0.0)) * features_df["bayes_score"].astype(float).values
+
+    score_alpha = max(float(weights.get("score_alpha", 1.0)), 1e-6)
+    if score_alpha != 1.0:
+        scores = np.power(np.maximum(scores, 0.0), score_alpha)
 
     if "dezena" in features_df.columns:
         ordered_scores = np.zeros(MAX_N)
