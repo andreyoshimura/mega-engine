@@ -11,6 +11,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from itertools import combinations
 
 import numpy as np
 import pandas as pd
@@ -29,10 +30,12 @@ from core.config import (
     OUT_GAMES_PATH,
     OUT_HISTORY_DIR,
     REPO_ROOT,
+    RESULTS_PATH,
     get_bayesian,
     get_draw_size,
     get_feature_weights,
     get_parameters,
+    get_structural_rules,
     load_config,
 )
 from core.features_megasena import build_features
@@ -77,6 +80,66 @@ def validate_game(game: list[int], *, ticket_size: int = TICKET_SIZE) -> None:
         raise ValueError(f"Jogo invalido: dezenas fora de [{MIN_N}..{MAX_N}]")
     if len(set(game)) != ticket_size:
         raise ValueError("Jogo invalido: dezenas repetidas")
+
+
+def pair_key(a: int, b: int) -> tuple[int, int]:
+    return (a, b) if a <= b else (b, a)
+
+
+def build_weak_pair_set(results_df: pd.DataFrame, bottom_pairs: int) -> set[tuple[int, int]]:
+    if bottom_pairs <= 0 or results_df.empty:
+        return set()
+
+    counts: dict[tuple[int, int], int] = {}
+    for _, row in results_df.iterrows():
+        nums = sorted(int(row[f"d{i}"]) for i in range(1, DRAW_SIZE + 1))
+        for a, b in combinations(nums, 2):
+            key = pair_key(a, b)
+            counts[key] = counts.get(key, 0) + 1
+
+    ranked = sorted(((pair, count) for pair, count in counts.items() if count > 0), key=lambda item: (item[1], item[0]))
+    return {pair for pair, _count in ranked[:bottom_pairs]}
+
+
+def count_weak_pairs_in_game(game: list[int], weak_pairs: set[tuple[int, int]]) -> int:
+    count = 0
+    for a, b in combinations(game, 2):
+        if pair_key(a, b) in weak_pairs:
+            count += 1
+    return count
+
+
+def check_max_consecutive(game: list[int], max_seq: int) -> bool:
+    if max_seq <= 0:
+        return True
+
+    ordered = sorted(game)
+    run = 1
+    for idx in range(1, len(ordered)):
+        if ordered[idx] == ordered[idx - 1] + 1:
+            run += 1
+            if run > max_seq:
+                return False
+        else:
+            run = 1
+    return True
+
+
+def diff_count(game_a: list[int], game_b: list[int]) -> int:
+    inter = len(set(game_a).intersection(game_b))
+    return len(game_a) - inter
+
+
+def score_game(
+    game: list[int],
+    probs: np.ndarray,
+    *,
+    weak_pairs: set[tuple[int, int]] | None = None,
+    penalty_weak_pair: float = 0.0,
+) -> float:
+    base_score = float(sum(probs[n - 1] for n in game if MIN_N <= n <= MAX_N))
+    weak_pair_penalty = count_weak_pairs_in_game(game, weak_pairs or set()) * penalty_weak_pair
+    return base_score - weak_pair_penalty
 
 
 def _normalize_scores(scores: np.ndarray) -> np.ndarray:
@@ -157,6 +220,10 @@ def generate_games_from_probs(
     ticket_size: int = TICKET_SIZE,
     n_sim: int = N_SIM,
     max_intersection: int = MAX_INTERSECTION,
+    weak_pairs: set[tuple[int, int]] | None = None,
+    max_seq: int = 0,
+    min_diff: int = 0,
+    penalty_weak_pair: float = 0.0,
 ) -> list[list[int]]:
     if n_games <= 0:
         raise ValueError("n_games deve ser maior que zero")
@@ -167,19 +234,44 @@ def generate_games_from_probs(
 
     rng = np.random.default_rng(seed)
     candidates = [weighted_sample(probs, ticket_size, rng) for _ in range(n_sim)]
+    seen_candidates: set[tuple[int, ...]] = set()
+    ranked_candidates: list[tuple[float, list[int]]] = []
+    for game in candidates:
+        key = tuple(game)
+        if key in seen_candidates:
+            continue
+        seen_candidates.add(key)
+        if not check_max_consecutive(game, max_seq):
+            continue
+        ranked_candidates.append(
+            (
+                score_game(
+                    game,
+                    probs,
+                    weak_pairs=weak_pairs,
+                    penalty_weak_pair=penalty_weak_pair,
+                ),
+                game,
+            )
+        )
+
+    ranked_candidates.sort(key=lambda item: item[0], reverse=True)
 
     selected: list[list[int]] = []
     seen: set[tuple[int, ...]] = set()
 
-    for game in candidates:
+    for _score, game in ranked_candidates:
         if len(selected) >= n_games:
             break
-        if all(len(set(game).intersection(existing)) <= max_intersection for existing in selected):
+        if all(
+            len(set(game).intersection(existing)) <= max_intersection and diff_count(game, existing) >= min_diff
+            for existing in selected
+        ):
             selected.append(game)
             seen.add(tuple(game))
 
     if len(selected) < n_games:
-        for game in candidates:
+        for _score, game in ranked_candidates:
             key = tuple(game)
             if key not in seen:
                 selected.append(game)
@@ -189,7 +281,7 @@ def generate_games_from_probs(
 
     while len(selected) < n_games:
         game = tuple(int(x) for x in sorted(rng.choice(np.arange(MIN_N, MAX_N + 1), size=ticket_size, replace=False)))
-        if game not in seen:
+        if game not in seen and check_max_consecutive(list(game), max_seq):
             selected.append(list(game))
             seen.add(game)
 
@@ -202,7 +294,10 @@ def generate_games_from_probs(
 def generate_games(seed: int | None = None, config: dict[str, Any] | None = None) -> list[list[int]]:
     config = config or load_config()
     params = get_parameters(config)
+    structural_rules = get_structural_rules(config)
     probs = load_probs(config=config)
+    results_df = pd.read_csv(RESULTS_PATH)
+    weak_pairs = build_weak_pair_set(results_df, int(structural_rules["bottom_pairs"]))
     return generate_games_from_probs(
         probs,
         seed=seed,
@@ -210,6 +305,10 @@ def generate_games(seed: int | None = None, config: dict[str, Any] | None = None
         ticket_size=int(params.get("ticket_size", TICKET_SIZE)),
         n_sim=int(params.get("n_sim", N_SIM)),
         max_intersection=int(params.get("max_intersection", MAX_INTERSECTION)),
+        weak_pairs=weak_pairs,
+        max_seq=int(structural_rules["max_seq"]),
+        min_diff=int(structural_rules["min_diff"]),
+        penalty_weak_pair=float(structural_rules["penalty_weak_pair"]),
     )
 
 
@@ -251,6 +350,7 @@ def build_output_payload(games: list[list[int]], config: dict[str, Any]) -> dict
     generation_seed = derive_generation_seed(config, last_result)
     bayesian = get_bayesian(config)
     feature_weights = get_feature_weights(config)
+    structural_rules = get_structural_rules(config)
 
     if isinstance(last_result, dict) and "concurso" in last_result:
         latest_concurso = int(last_result["concurso"])
@@ -276,6 +376,7 @@ def build_output_payload(games: list[list[int]], config: dict[str, Any]) -> dict
             "generation_seed": generation_seed,
             "bayesian": bayesian,
             "feature_weights": feature_weights,
+            "structural_rules": structural_rules,
             "config_path": str(CONFIG_PATH.relative_to(REPO_ROOT)),
         },
     }

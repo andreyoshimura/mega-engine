@@ -3,7 +3,14 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from core.generator import build_output_payload, generate_games_from_probs, scores_from_features
+from core.generator import (
+    build_output_payload,
+    build_weak_pair_set,
+    check_max_consecutive,
+    count_weak_pairs_in_game,
+    generate_games_from_probs,
+    scores_from_features,
+)
 
 
 class GeneratorTests(unittest.TestCase):
@@ -15,6 +22,23 @@ class GeneratorTests(unittest.TestCase):
             self.assertEqual(len(game), 9)
             self.assertEqual(game, sorted(game))
             self.assertEqual(len(set(game)), 9)
+
+    def test_generate_games_from_probs_respects_max_seq_and_min_diff(self):
+        probs = np.ones(60) / 60
+        games = generate_games_from_probs(
+            probs,
+            seed=123,
+            n_games=3,
+            ticket_size=6,
+            n_sim=300,
+            max_intersection=5,
+            max_seq=2,
+            min_diff=3,
+        )
+        self.assertEqual(len(games), 3)
+        for game in games:
+            self.assertTrue(check_max_consecutive(game, 2))
+        self.assertGreaterEqual(len(set(games[0]).difference(games[1])), 3)
 
     def test_build_output_payload_keeps_n8n_contract_and_metadata(self):
         config = {"strategy_name": "megasena_v1", "model_version": "1.1.0", "parameters": {"ticket_size": 9}}
@@ -73,6 +97,21 @@ class GeneratorTests(unittest.TestCase):
         linear = scores_from_features(features, config={"parameters": {"feature_weights": {"freq_20": 1.0, "score_alpha": 1.0}}})
         aggressive = scores_from_features(features, config={"parameters": {"feature_weights": {"freq_20": 1.0, "score_alpha": 2.0}}})
         self.assertGreater(aggressive[1] - aggressive[0], linear[1] - linear[0])
+
+    def test_build_weak_pair_set_and_count_penalty(self):
+        results_df = pd.DataFrame(
+            [
+                {"concurso": 1, "data": "01/01/2026", "d1": 1, "d2": 2, "d3": 3, "d4": 4, "d5": 5, "d6": 6},
+                {"concurso": 2, "data": "02/01/2026", "d1": 1, "d2": 2, "d3": 7, "d4": 8, "d5": 9, "d6": 10},
+                {"concurso": 3, "data": "03/01/2026", "d1": 1, "d2": 3, "d3": 7, "d4": 11, "d5": 12, "d6": 13},
+            ]
+        )
+        weak_pairs = build_weak_pair_set(results_df, 3)
+        self.assertTrue(weak_pairs)
+        weak_pair = next(iter(weak_pairs))
+        game = sorted({weak_pair[0], weak_pair[1], 20, 21, 22, 23})
+        penalty = count_weak_pairs_in_game(game, weak_pairs)
+        self.assertGreaterEqual(penalty, 1)
 
 
 if __name__ == "__main__":

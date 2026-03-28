@@ -16,10 +16,11 @@ from core.config import (
     DEFAULT_TICKET_SIZE,
     DEFAULT_WINDOW,
     RESULTS_PATH,
+    get_structural_rules,
     get_parameters,
     load_config,
 )
-from core.generator import build_probabilities_from_history, generate_games_from_probs
+from core.generator import build_probabilities_from_history, build_weak_pair_set, generate_games_from_probs
 from core.versioning import _config_hash
 
 DRAW_SIZE = 6
@@ -74,12 +75,14 @@ def run_backtest(
     total_eq6 = 0
     for idx in range(min_history, len(results_df)):
         target = results_df.iloc[idx]
+        history = results_df.iloc[:idx].copy()
 
         if probability_cache is not None and idx in probability_cache:
             probs = probability_cache[idx]
         else:
-            history = results_df.iloc[:idx].copy()
             probs = build_probabilities_from_history(history, window=window, config=config)
+        structural_rules = get_structural_rules(config or {})
+        weak_pairs = build_weak_pair_set(history, int(structural_rules["bottom_pairs"]))
         games = generate_games_from_probs(
             probs,
             seed=seed_base + idx,
@@ -87,6 +90,10 @@ def run_backtest(
             ticket_size=ticket_size,
             n_sim=n_sim,
             max_intersection=max_intersection,
+            weak_pairs=weak_pairs,
+            max_seq=int(structural_rules["max_seq"]),
+            min_diff=int(structural_rules["min_diff"]),
+            penalty_weak_pair=float(structural_rules["penalty_weak_pair"]),
         )
 
         draw_numbers = [int(target[f"d{i}"]) for i in range(1, DRAW_SIZE + 1)]

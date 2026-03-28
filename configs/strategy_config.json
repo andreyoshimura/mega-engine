@@ -8,6 +8,10 @@
     "min_history": 100,
     "max_intersection": 3,
     "backtest_n_sim": 20,
+    "bottom_pairs": 60,
+    "max_seq": 5,
+    "min_diff": 8,
+    "penalty_weak_pair": 5,
     "bayesian": {
       "alpha_prior": 1.0,
       "beta_prior": 9.0

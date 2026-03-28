@@ -38,6 +38,10 @@ DEFAULT_N_SIM = 5000
 DEFAULT_MAX_INTERSECTION = 4
 DEFAULT_MIN_HISTORY = 100
 DEFAULT_BACKTEST_N_SIM = 20
+DEFAULT_BOTTOM_PAIRS = 60
+DEFAULT_MAX_SEQ = 5
+DEFAULT_MIN_DIFF = 8
+DEFAULT_PENALTY_WEAK_PAIR = 5.0
 DEFAULT_BAYESIAN = {
     "alpha_prior": 1.0,
     "beta_prior": 9.0,
@@ -50,6 +54,12 @@ DEFAULT_FEATURE_WEIGHTS = {
     "bayes_mean": 1.0,
     "bayes_score": 0.0,
     "score_alpha": 1.0,
+}
+DEFAULT_STRUCTURAL_RULES = {
+    "bottom_pairs": DEFAULT_BOTTOM_PAIRS,
+    "max_seq": DEFAULT_MAX_SEQ,
+    "min_diff": DEFAULT_MIN_DIFF,
+    "penalty_weak_pair": DEFAULT_PENALTY_WEAK_PAIR,
 }
 DEFAULT_PROMOTION_GUARD = {
     "min_improvement_score": 0.0,
@@ -138,6 +148,21 @@ def get_learning(config: dict[str, Any]) -> dict[str, Any]:
     learning = dict(DEFAULT_LEARNING)
     learning.update(get_parameters(config).get("learning", {}))
     return learning
+
+
+def get_structural_rules(config: dict[str, Any]) -> dict[str, Any]:
+    params = get_parameters(config)
+    rules = dict(DEFAULT_STRUCTURAL_RULES)
+    rules.update(params.get("structural_rules", {}))
+    if "bottom_pairs" in params:
+        rules["bottom_pairs"] = params["bottom_pairs"]
+    if "max_seq" in params:
+        rules["max_seq"] = params["max_seq"]
+    if "min_diff" in params:
+        rules["min_diff"] = params["min_diff"]
+    if "penalty_weak_pair" in params:
+        rules["penalty_weak_pair"] = params["penalty_weak_pair"]
+    return rules
 
 
 def get_optimization_grid(config: dict[str, Any]) -> dict[str, Any]:
