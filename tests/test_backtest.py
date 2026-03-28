@@ -4,7 +4,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 
-from core.backtest import build_probability_cache, run_backtest
+from core.backtest import build_probability_cache, build_weak_pair_cache, run_backtest
 
 
 def _sample_results_df() -> pd.DataFrame:
@@ -68,6 +68,35 @@ class BacktestTests(unittest.TestCase):
 
         self.assertEqual(report["summary"]["draws_evaluated"], 4)
         self.assertEqual(report["per_draw"], [])
+
+    def test_build_weak_pair_cache_builds_incremental_entries(self):
+        results_df = _sample_results_df()
+
+        caches = build_weak_pair_cache(results_df, min_history=2, bottom_pairs=2)
+
+        self.assertEqual(sorted(caches.keys()), [2, 3, 4, 5])
+        self.assertTrue(all(isinstance(caches[idx], set) for idx in caches))
+
+    def test_run_backtest_uses_weak_pair_cache_when_available(self):
+        results_df = _sample_results_df()
+        probability_cache = {idx: np.ones(60) / 60 for idx in range(2, len(results_df))}
+        weak_pair_cache = {idx: set() for idx in range(2, len(results_df))}
+
+        report = run_backtest(
+            results_df,
+            window=2,
+            min_history=2,
+            n_games=2,
+            ticket_size=6,
+            n_sim=5,
+            max_intersection=3,
+            probability_cache=probability_cache,
+            weak_pair_cache=weak_pair_cache,
+            config={},
+            include_per_draw=False,
+        )
+
+        self.assertEqual(report["summary"]["draws_evaluated"], 4)
 
 
 if __name__ == "__main__":

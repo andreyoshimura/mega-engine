@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from itertools import combinations
 from typing import Any
 
 import pandas as pd
@@ -20,7 +21,7 @@ from core.config import (
     get_parameters,
     load_config,
 )
-from core.generator import build_probabilities_from_history, build_weak_pair_set, generate_games_from_probs
+from core.generator import build_probabilities_from_history, generate_games_from_probs, pair_key
 from core.versioning import _config_hash
 
 DRAW_SIZE = 6
@@ -47,6 +48,35 @@ def build_probability_cache(
     return caches
 
 
+def build_weak_pair_cache(
+    results_df: pd.DataFrame,
+    *,
+    min_history: int,
+    bottom_pairs: int,
+) -> dict[int, set[tuple[int, int]]]:
+    if bottom_pairs <= 0:
+        return {}
+
+    pair_counts: dict[tuple[int, int], int] = {}
+    caches: dict[int, set[tuple[int, int]]] = {}
+
+    for idx in range(len(results_df)):
+        if idx >= int(min_history):
+            ranked = sorted(
+                ((pair, count) for pair, count in pair_counts.items() if count > 0),
+                key=lambda item: (item[1], item[0]),
+            )
+            caches[idx] = {pair for pair, _count in ranked[:bottom_pairs]}
+
+        row = results_df.iloc[idx]
+        nums = sorted(int(row[f"d{i}"]) for i in range(1, DRAW_SIZE + 1))
+        for a, b in combinations(nums, 2):
+            key = pair_key(a, b)
+            pair_counts[key] = pair_counts.get(key, 0) + 1
+
+    return caches
+
+
 def run_backtest(
     results_df: pd.DataFrame,
     *,
@@ -60,6 +90,7 @@ def run_backtest(
     config: dict | None = None,
     probability_cache: dict[int, Any] | None = None,
     include_per_draw: bool = True,
+    weak_pair_cache: dict[int, set[tuple[int, int]]] | None = None,
 ) -> dict:
     if len(results_df) <= min_history:
         raise ValueError("Historico insuficiente para backtest.")
@@ -73,16 +104,19 @@ def run_backtest(
     count_ge4_draws = 0
     count_ge5_draws = 0
     total_eq6 = 0
+    structural_rules = get_structural_rules(config or {})
     for idx in range(min_history, len(results_df)):
         target = results_df.iloc[idx]
-        history = results_df.iloc[:idx].copy()
 
         if probability_cache is not None and idx in probability_cache:
             probs = probability_cache[idx]
         else:
+            history = results_df.iloc[:idx].copy()
             probs = build_probabilities_from_history(history, window=window, config=config)
-        structural_rules = get_structural_rules(config or {})
-        weak_pairs = build_weak_pair_set(history, int(structural_rules["bottom_pairs"]))
+        if weak_pair_cache is not None and idx in weak_pair_cache:
+            weak_pairs = weak_pair_cache[idx]
+        else:
+            weak_pairs = set()
         games = generate_games_from_probs(
             probs,
             seed=seed_base + idx,
@@ -159,6 +193,12 @@ def main() -> None:
     ticket_size = int(params.get("ticket_size", DEFAULT_TICKET_SIZE))
     n_sim = int(params.get("backtest_n_sim", min(int(params.get("n_sim", DEFAULT_N_SIM)), DEFAULT_BACKTEST_N_SIM)))
     max_intersection = int(params.get("max_intersection", DEFAULT_MAX_INTERSECTION))
+    structural_rules = get_structural_rules(config)
+    weak_pair_cache = build_weak_pair_cache(
+        results_df,
+        min_history=min_history,
+        bottom_pairs=int(structural_rules["bottom_pairs"]),
+    )
 
     report = run_backtest(
         results_df,
@@ -169,6 +209,7 @@ def main() -> None:
         n_sim=n_sim,
         max_intersection=max_intersection,
         config=config,
+        weak_pair_cache=weak_pair_cache,
     )
     report["strategy"] = {
         "strategy_name": config.get("strategy_name"),

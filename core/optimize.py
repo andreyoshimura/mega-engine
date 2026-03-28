@@ -5,7 +5,7 @@ from itertools import product
 
 import pandas as pd
 
-from core.backtest import build_probability_cache, run_backtest
+from core.backtest import build_probability_cache, build_weak_pair_cache, run_backtest
 from core.config import (
     DEFAULT_BACKTEST_N_SIM,
     DEFAULT_MIN_HISTORY,
@@ -15,6 +15,7 @@ from core.config import (
     OPTIMIZATION_REPORT_PATH as OUT_PATH,
     RECOMMENDED_CONFIG_PATH,
     RESULTS_PATH,
+    get_structural_rules,
     get_promotion_guard,
     get_optimization_grid,
     get_parameters,
@@ -68,6 +69,12 @@ def run_optimization(results_df: pd.DataFrame, config: dict) -> dict:
         min_history=min_history,
         config=config,
     )
+    structural_rules = get_structural_rules(config)
+    weak_pair_cache = build_weak_pair_cache(
+        results_df,
+        min_history=min_history,
+        bottom_pairs=int(structural_rules["bottom_pairs"]),
+    )
 
     candidates = []
     current_summary = None
@@ -84,6 +91,7 @@ def run_optimization(results_df: pd.DataFrame, config: dict) -> dict:
             config=config,
             probability_cache=probability_cache.get(window),
             include_per_draw=False,
+            weak_pair_cache=weak_pair_cache,
         )
         summary = summary_report["summary"]
         candidate = {
@@ -127,6 +135,7 @@ def run_optimization(results_df: pd.DataFrame, config: dict) -> dict:
             config=config,
             probability_cache=probability_cache.get(current_window),
             include_per_draw=False,
+            weak_pair_cache=weak_pair_cache,
         )
         current_summary = current_report["summary"]
     promotion_decision = evaluate_promotion_guard(
