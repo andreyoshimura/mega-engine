@@ -24,6 +24,12 @@
       "max_ge4_drop_ratio": 0.95,
       "max_hits_drop_ratio": 0.98
     },
+    "learning": {
+      "feature_weight_step_ratio": 0.25,
+      "bayesian_step_ratio": 0.2,
+      "allow_parameter_promotion": true,
+      "require_recalibration_signal": true
+    },
     "monitoring": {
       "recent_window": 5,
       "baseline_window": 20,

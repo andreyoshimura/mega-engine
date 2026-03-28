@@ -13,6 +13,7 @@ FEATURES_PATH = REPO_ROOT / "data" / "features" / "dezenas.csv"
 LAST_RESULT_PATH = REPO_ROOT / "data" / "last_result.json"
 MODEL_HISTORY_PATH = REPO_ROOT / "data" / "model_history.jsonl"
 CONFIG_PROMOTION_LOG_PATH = REPO_ROOT / "data" / "config_promotion_log.jsonl"
+LEARNING_LOG_PATH = REPO_ROOT / "data" / "learning_log.jsonl"
 PERFORMANCE_LOG_PATH = REPO_ROOT / "data" / "performance_log.jsonl"
 OUT_GAMES_PATH = REPO_ROOT / "out" / "jogos_gerados.json"
 OUT_HISTORY_DIR = REPO_ROOT / "out" / "history"
@@ -20,6 +21,8 @@ BACKTEST_REPORT_PATH = REPO_ROOT / "out" / "backtest_report.json"
 OPTIMIZATION_REPORT_PATH = REPO_ROOT / "out" / "optimization_report.json"
 RECOMMENDED_CONFIG_PATH = REPO_ROOT / "out" / "recommended_strategy_config.json"
 PROMOTION_DECISION_PATH = REPO_ROOT / "out" / "config_promotion_decision.json"
+LEARNING_DECISION_PATH = REPO_ROOT / "out" / "learning_decision.json"
+NEXT_STRATEGY_CONFIG_PATH = REPO_ROOT / "out" / "next_strategy_config.json"
 MONITOR_REPORT_PATH = REPO_ROOT / "out" / "performance_monitor.json"
 RECALIBRATION_SIGNAL_PATH = REPO_ROOT / "out" / "recalibration_signal.json"
 IMAGE_OUTPUT_DIR = REPO_ROOT / "out" / "images"
@@ -50,6 +53,12 @@ DEFAULT_PROMOTION_GUARD = {
     "max_score_drop_ratio": 0.95,
     "max_ge4_drop_ratio": 0.95,
     "max_hits_drop_ratio": 0.98,
+}
+DEFAULT_LEARNING = {
+    "feature_weight_step_ratio": 0.25,
+    "bayesian_step_ratio": 0.2,
+    "allow_parameter_promotion": True,
+    "require_recalibration_signal": True,
 }
 
 DEFAULT_MONITORING = {
@@ -119,6 +128,12 @@ def get_promotion_guard(config: dict[str, Any]) -> dict[str, Any]:
     guard = dict(DEFAULT_PROMOTION_GUARD)
     guard.update(get_parameters(config).get("promotion_guard", {}))
     return guard
+
+
+def get_learning(config: dict[str, Any]) -> dict[str, Any]:
+    learning = dict(DEFAULT_LEARNING)
+    learning.update(get_parameters(config).get("learning", {}))
+    return learning
 
 
 def get_optimization_grid(config: dict[str, Any]) -> dict[str, Any]:
