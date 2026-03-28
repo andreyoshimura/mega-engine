@@ -5,7 +5,7 @@ from itertools import product
 
 import pandas as pd
 
-from core.backtest import run_backtest
+from core.backtest import build_probability_cache, run_backtest
 from core.config import (
     DEFAULT_BACKTEST_N_SIM,
     DEFAULT_MIN_HISTORY,
@@ -61,8 +61,17 @@ def run_optimization(results_df: pd.DataFrame, config: dict) -> dict:
     current_num_games = int(params.get("num_games", DEFAULT_NUM_GAMES))
     current_max_intersection = int(params.get("max_intersection", 3))
 
+    combinations = build_grid(config)
+    probability_cache = build_probability_cache(
+        results_df,
+        windows=[int(item["window"]) for item in combinations] + [current_window],
+        min_history=min_history,
+        config=config,
+    )
+
     candidates = []
-    for combination in build_grid(config):
+    current_summary = None
+    for combination in combinations:
         window = int(combination["window"])
         summary_report = run_backtest(
             results_df,
@@ -73,20 +82,28 @@ def run_optimization(results_df: pd.DataFrame, config: dict) -> dict:
             n_sim=backtest_n_sim,
             max_intersection=int(combination["max_intersection"]),
             config=config,
+            probability_cache=probability_cache.get(window),
+            include_per_draw=False,
         )
         summary = summary_report["summary"]
-        candidates.append(
-            {
-                "parameters": {
-                    "window": window,
-                    "num_games": int(combination["num_games"]),
-                    "ticket_size": ticket_size,
-                    "max_intersection": int(combination["max_intersection"]),
-                    "backtest_n_sim": backtest_n_sim,
-                },
-                "summary": summary,
-            }
-        )
+        candidate = {
+            "parameters": {
+                "window": window,
+                "num_games": int(combination["num_games"]),
+                "ticket_size": ticket_size,
+                "max_intersection": int(combination["max_intersection"]),
+                "backtest_n_sim": backtest_n_sim,
+            },
+            "summary": summary,
+        }
+        candidates.append(candidate)
+
+        if (
+            window == current_window
+            and int(combination["num_games"]) == current_num_games
+            and int(combination["max_intersection"]) == current_max_intersection
+        ):
+            current_summary = summary
 
     candidates.sort(key=rank_key, reverse=True)
     best = candidates[0]
@@ -98,18 +115,22 @@ def run_optimization(results_df: pd.DataFrame, config: dict) -> dict:
         "model_version": config.get("model_version"),
         "parameters": recommended_parameters,
     }
-    current_report = run_backtest(
-        results_df,
-        window=current_window,
-        min_history=max(min_history, current_window),
-        n_games=current_num_games,
-        ticket_size=ticket_size,
-        n_sim=backtest_n_sim,
-        max_intersection=current_max_intersection,
-        config=config,
-    )
+    if current_summary is None:
+        current_report = run_backtest(
+            results_df,
+            window=current_window,
+            min_history=max(min_history, current_window),
+            n_games=current_num_games,
+            ticket_size=ticket_size,
+            n_sim=backtest_n_sim,
+            max_intersection=current_max_intersection,
+            config=config,
+            probability_cache=probability_cache.get(current_window),
+            include_per_draw=False,
+        )
+        current_summary = current_report["summary"]
     promotion_decision = evaluate_promotion_guard(
-        current_report["summary"],
+        current_summary,
         best["summary"],
         get_promotion_guard(config),
     )
@@ -142,7 +163,7 @@ def run_optimization(results_df: pd.DataFrame, config: dict) -> dict:
                 "max_intersection": current_max_intersection,
                 "backtest_n_sim": backtest_n_sim,
             },
-            "summary": current_report["summary"],
+            "summary": current_summary,
         },
         "promotion_decision": promotion_decision,
         "recommended_config": recommended_config,
