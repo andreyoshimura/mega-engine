@@ -27,25 +27,51 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check compare prerequisites
+        id: prereq
+        run: |
+          has_last_result=false
+          has_games=false
+
+          if [ -f data/last_result.json ]; then
+            has_last_result=true
+          fi
+
+          if [ -f out/jogos_gerados.json ]; then
+            has_games=true
+          fi
+
+          echo "has_last_result=${has_last_result}" >> "${GITHUB_OUTPUT}"
+          echo "has_games=${has_games}" >> "${GITHUB_OUTPUT}"
+
+          if [ "${has_last_result}" != "true" ] || [ "${has_games}" != "true" ]; then
+            echo "Skipping compare workflow: data/last_result.json or out/jogos_gerados.json missing."
+          fi
+
       - name: Setup Python
+        if: steps.prereq.outputs.has_last_result == 'true' && steps.prereq.outputs.has_games == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install project
+        if: steps.prereq.outputs.has_last_result == 'true' && steps.prereq.outputs.has_games == 'true'
         run: |
           python -m pip install --upgrade pip
           pip install .
 
       - name: Compare latest draw
+        if: steps.prereq.outputs.has_last_result == 'true' && steps.prereq.outputs.has_games == 'true'
         run: |
           python -m core.compare_results
 
       - name: Monitor performance
+        if: steps.prereq.outputs.has_last_result == 'true' && steps.prereq.outputs.has_games == 'true'
         run: |
           python -m core.monitor_performance
 
       - name: Commit results (if changed)
+        if: steps.prereq.outputs.has_last_result == 'true' && steps.prereq.outputs.has_games == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
