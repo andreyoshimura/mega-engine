@@ -20,5 +20,8 @@ dev = [
   "pytest",
 ]
 
+[tool.setuptools]
+packages = ["core"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
