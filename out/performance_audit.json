@@ -1,6 +1,6 @@
 {
-  "generated_at_utc": "2026-03-28T01:41:04.178365+00:00",
-  "entries_audited": 15,
+  "generated_at_utc": "2026-03-28T01:47:00.154391+00:00",
+  "entries_audited": 16,
   "all_entries_match_snapshots": true,
   "rows": [
     {
@@ -152,6 +152,16 @@
       "max_hits": 2,
       "score": 0,
       "snapshot_path": "out/history/jogos_concurso_2988.json"
+    },
+    {
+      "concurso": 2989,
+      "data_sorteio": "26/03/2026",
+      "git_sha": null,
+      "snapshot_source": "performance_log",
+      "games_match_snapshot": true,
+      "max_hits": 0,
+      "score": 0,
+      "snapshot_path": "out/history/jogos_concurso_2989.json"
     }
   ]
 }
