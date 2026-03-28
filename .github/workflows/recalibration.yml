@@ -1,4 +1,4 @@
-name: Mega Recalibration
+name: Mega Recalibration Lite
 
 on:
   workflow_dispatch:
@@ -9,11 +9,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: mega-recalibration-main
+  group: mega-recalibration-lite-main
   cancel-in-progress: false
 
 jobs:
-  recalibration:
+  recalibration-lite:
     runs-on: ubuntu-latest
 
     steps:
@@ -32,45 +32,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install .
 
-      - name: Prepare CI recalibration config
+      - name: Run recalibration lite pipeline
         run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          path = Path("configs/strategy_config.json")
-          config = json.loads(path.read_text(encoding="utf-8"))
-          params = config.setdefault("parameters", {})
-          params["backtest_n_sim"] = 10
-          params["optimization_grid"] = {
-              "window": [100],
-              "num_games": [5, 6],
-              "max_intersection": [3, 4],
-          }
-          path.write_text(json.dumps(config, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-          print("[CI] Reduced optimization grid for workflow run.")
-          PY
-
-      - name: Run recalibration pipeline
-        run: |
-          python -m core.backtest
-          python -m core.optimize
           python -m core.monitor_performance
           python -m core.learning
 
-      - name: Commit recalibration artifacts (if changed)
+      - name: Commit recalibration lite artifacts (if changed)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git add \
             data/model_history.jsonl \
-            data/config_promotion_log.jsonl \
             data/learning_log.jsonl \
-            out/backtest_report.json \
-            out/optimization_report.json \
-            out/recommended_strategy_config.json \
-            out/config_promotion_decision.json \
             out/performance_monitor.json \
             out/recalibration_signal.json \
             out/learning_decision.json \
@@ -81,5 +55,5 @@ jobs:
             exit 0
           fi
 
-          git commit -m "chore: update recalibration artifacts"
+          git commit -m "chore: update recalibration lite artifacts"
           git push origin HEAD:main
