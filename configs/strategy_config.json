@@ -17,6 +17,13 @@
       "bayes_mean": 1.0,
       "bayes_score": 0.0
     },
+    "promotion_guard": {
+      "min_improvement_score": 0.0,
+      "min_improvement_ge4": 0.0,
+      "max_score_drop_ratio": 0.95,
+      "max_ge4_drop_ratio": 0.95,
+      "max_hits_drop_ratio": 0.98
+    },
     "monitoring": {
       "recent_window": 5,
       "baseline_window": 20,

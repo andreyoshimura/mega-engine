@@ -34,6 +34,7 @@ def run_backtest(
     n_sim: int = DEFAULT_N_SIM,
     max_intersection: int = DEFAULT_MAX_INTERSECTION,
     seed_base: int = 10_000,
+    config: dict | None = None,
 ) -> dict:
     if len(results_df) <= min_history:
         raise ValueError("Historico insuficiente para backtest.")
@@ -43,7 +44,7 @@ def run_backtest(
         history = results_df.iloc[:idx].copy()
         target = results_df.iloc[idx]
 
-        probs = build_probabilities_from_history(history, window=window)
+        probs = build_probabilities_from_history(history, window=window, config=config)
         games = generate_games_from_probs(
             probs,
             seed=seed_base + idx,
@@ -73,6 +74,8 @@ def run_backtest(
     rate_ge4 = sum(1 for item in per_draw if item["count_ge4"] > 0) / total_draws
     rate_ge5 = sum(1 for item in per_draw if item["count_ge5"] > 0) / total_draws
     total_eq6 = sum(item["count_eq6"] for item in per_draw)
+    avg_coverage_rate = sum(float(item.get("coverage_rate", 0.0)) for item in per_draw) / total_draws
+    avg_neglected = sum(len(item.get("neglected_draw_numbers", [])) for item in per_draw) / total_draws
 
     return {
         "summary": {
@@ -88,6 +91,8 @@ def run_backtest(
             "rate_ge4": round(rate_ge4, 4),
             "rate_ge5": round(rate_ge5, 4),
             "total_eq6": total_eq6,
+            "avg_coverage_rate": round(avg_coverage_rate, 4),
+            "avg_neglected_draw_numbers": round(avg_neglected, 4),
         },
         "per_draw": per_draw,
     }
@@ -113,6 +118,7 @@ def main() -> None:
         ticket_size=ticket_size,
         n_sim=n_sim,
         max_intersection=max_intersection,
+        config=config,
     )
     report["strategy"] = {
         "strategy_name": config.get("strategy_name"),

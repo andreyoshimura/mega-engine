@@ -15,10 +15,12 @@ from core.config import (
     OPTIMIZATION_REPORT_PATH as OUT_PATH,
     RECOMMENDED_CONFIG_PATH,
     RESULTS_PATH,
+    get_promotion_guard,
     get_optimization_grid,
     get_parameters,
     load_config,
 )
+from core.promotion import evaluate_promotion_guard, write_promotion_artifacts
 from core.versioning import _config_hash
 
 
@@ -55,6 +57,9 @@ def run_optimization(results_df: pd.DataFrame, config: dict) -> dict:
     ticket_size = int(params.get("ticket_size", DEFAULT_TICKET_SIZE))
     min_history = int(params.get("min_history", DEFAULT_MIN_HISTORY))
     backtest_n_sim = int(params.get("backtest_n_sim", DEFAULT_BACKTEST_N_SIM))
+    current_window = int(params.get("window", min_history))
+    current_num_games = int(params.get("num_games", DEFAULT_NUM_GAMES))
+    current_max_intersection = int(params.get("max_intersection", 3))
 
     candidates = []
     for combination in build_grid(config):
@@ -67,6 +72,7 @@ def run_optimization(results_df: pd.DataFrame, config: dict) -> dict:
             ticket_size=ticket_size,
             n_sim=backtest_n_sim,
             max_intersection=int(combination["max_intersection"]),
+            config=config,
         )
         summary = summary_report["summary"]
         candidates.append(
@@ -92,6 +98,21 @@ def run_optimization(results_df: pd.DataFrame, config: dict) -> dict:
         "model_version": config.get("model_version"),
         "parameters": recommended_parameters,
     }
+    current_report = run_backtest(
+        results_df,
+        window=current_window,
+        min_history=max(min_history, current_window),
+        n_games=current_num_games,
+        ticket_size=ticket_size,
+        n_sim=backtest_n_sim,
+        max_intersection=current_max_intersection,
+        config=config,
+    )
+    promotion_decision = evaluate_promotion_guard(
+        current_report["summary"],
+        best["summary"],
+        get_promotion_guard(config),
+    )
 
     return {
         "strategy": {
@@ -113,6 +134,17 @@ def run_optimization(results_df: pd.DataFrame, config: dict) -> dict:
             "summary": best["summary"],
             "recommended_config_hash": _config_hash(recommended_config),
         },
+        "current": {
+            "parameters": {
+                "window": current_window,
+                "num_games": current_num_games,
+                "ticket_size": ticket_size,
+                "max_intersection": current_max_intersection,
+                "backtest_n_sim": backtest_n_sim,
+            },
+            "summary": current_report["summary"],
+        },
+        "promotion_decision": promotion_decision,
         "recommended_config": recommended_config,
         "ranking": candidates,
     }
@@ -130,6 +162,12 @@ def main() -> None:
     with RECOMMENDED_CONFIG_PATH.open("w", encoding="utf-8") as f:
         json.dump(report["recommended_config"], f, indent=2, ensure_ascii=False)
 
+    write_promotion_artifacts(
+        base_config=config,
+        recommended_config=report["recommended_config"],
+        decision=report["promotion_decision"],
+    )
+
     best = report["best"]
     tested = report["search"]["candidates_tested"]
     best_avg_score = best["summary"]["avg_score"]
@@ -139,6 +177,7 @@ def main() -> None:
         f"tested={tested}",
         f"best_avg_score={best_avg_score}",
         f"best_rate_ge4={best_rate_ge4}",
+        f"should_promote={report['promotion_decision']['should_promote']}",
         f"recommended_config={RECOMMENDED_CONFIG_PATH}",
     )
 

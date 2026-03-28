@@ -14,10 +14,11 @@ class CompareTests(unittest.TestCase):
         self.assertEqual(result["summary"]["max_hits"], 3)
         self.assertEqual(result["summary"]["hist_hits_count"]["3"], 1)
         self.assertEqual(result["summary"]["hist_hits_count"]["0"], 1)
+        self.assertEqual(result["summary"]["coverage_count"], 3)
+        self.assertEqual(result["summary"]["coverage_rate"], 0.5)
+        self.assertEqual(result["summary"]["covered_draw_numbers"], [1, 2, 3])
+        self.assertEqual(result["summary"]["neglected_draw_numbers"], [4, 5, 6])
 
-
-if __name__ == "__main__":
-    unittest.main()
 
 class CompareSnapshotTests(unittest.TestCase):
     def test_load_generated_games_rejects_wrong_current_target(self):
@@ -36,7 +37,5 @@ class CompareSnapshotTests(unittest.TestCase):
             out_history.__truediv__.return_value.exists.return_value = False
             with self.assertRaises(ValueError):
                 load_generated_games(1234)
-
-
 if __name__ == "__main__":
     unittest.main()

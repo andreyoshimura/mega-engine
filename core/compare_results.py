@@ -166,9 +166,11 @@ def summarize_recent_events(window: int = 20) -> dict[str, Any] | None:
 
 def compute_hits(draw_set: set[int], games: list[tuple[str, list[int]]]) -> dict[str, Any]:
     per_game = []
+    covered_numbers: set[int] = set()
     for gid, nums in games:
         hits = sum(1 for n in nums if n in draw_set)
         per_game.append({"id": gid, "numbers": nums, "hits": hits})
+        covered_numbers.update(nums)
 
     max_hits = max((item["hits"] for item in per_game), default=0)
     ge4 = sum(1 for item in per_game if item["hits"] >= 4)
@@ -177,6 +179,10 @@ def compute_hits(draw_set: set[int], games: list[tuple[str, list[int]]]) -> dict
     score = (ge4 * 1) + (ge5 * 5) + (eq6 * 50)
     hit_counter = Counter(item["hits"] for item in per_game)
     hist_hits_count = {str(i): int(hit_counter.get(i, 0)) for i in range(10)}
+    neglected_draw_numbers = sorted(int(n) for n in draw_set if n not in covered_numbers)
+    covered_draw_numbers = sorted(int(n) for n in draw_set if n in covered_numbers)
+    coverage_count = len(covered_draw_numbers)
+    draw_size = len(draw_set)
 
     return {
         "per_game": per_game,
@@ -187,6 +193,10 @@ def compute_hits(draw_set: set[int], games: list[tuple[str, list[int]]]) -> dict
             "count_eq6": eq6,
             "score": score,
             "hist_hits_count": hist_hits_count,
+            "coverage_count": coverage_count,
+            "coverage_rate": round(coverage_count / draw_size, 4) if draw_size else 0.0,
+            "covered_draw_numbers": covered_draw_numbers,
+            "neglected_draw_numbers": neglected_draw_numbers,
         },
     }
 

@@ -12,12 +12,14 @@ RESULTS_PATH = REPO_ROOT / "data" / "results" / "megasena.csv"
 FEATURES_PATH = REPO_ROOT / "data" / "features" / "dezenas.csv"
 LAST_RESULT_PATH = REPO_ROOT / "data" / "last_result.json"
 MODEL_HISTORY_PATH = REPO_ROOT / "data" / "model_history.jsonl"
+CONFIG_PROMOTION_LOG_PATH = REPO_ROOT / "data" / "config_promotion_log.jsonl"
 PERFORMANCE_LOG_PATH = REPO_ROOT / "data" / "performance_log.jsonl"
 OUT_GAMES_PATH = REPO_ROOT / "out" / "jogos_gerados.json"
 OUT_HISTORY_DIR = REPO_ROOT / "out" / "history"
 BACKTEST_REPORT_PATH = REPO_ROOT / "out" / "backtest_report.json"
 OPTIMIZATION_REPORT_PATH = REPO_ROOT / "out" / "optimization_report.json"
 RECOMMENDED_CONFIG_PATH = REPO_ROOT / "out" / "recommended_strategy_config.json"
+PROMOTION_DECISION_PATH = REPO_ROOT / "out" / "config_promotion_decision.json"
 MONITOR_REPORT_PATH = REPO_ROOT / "out" / "performance_monitor.json"
 RECALIBRATION_SIGNAL_PATH = REPO_ROOT / "out" / "recalibration_signal.json"
 IMAGE_OUTPUT_DIR = REPO_ROOT / "out" / "images"
@@ -40,6 +42,14 @@ DEFAULT_BAYESIAN = {
 DEFAULT_FEATURE_WEIGHTS = {
     "freq_100": 1.0,
     "bayes_mean": 1.0,
+    "bayes_score": 0.0,
+}
+DEFAULT_PROMOTION_GUARD = {
+    "min_improvement_score": 0.0,
+    "min_improvement_ge4": 0.0,
+    "max_score_drop_ratio": 0.95,
+    "max_ge4_drop_ratio": 0.95,
+    "max_hits_drop_ratio": 0.98,
 }
 
 DEFAULT_MONITORING = {
@@ -103,6 +113,12 @@ def get_feature_weights(config: dict[str, Any]) -> dict[str, Any]:
     weights = dict(DEFAULT_FEATURE_WEIGHTS)
     weights.update(get_parameters(config).get("feature_weights", {}))
     return weights
+
+
+def get_promotion_guard(config: dict[str, Any]) -> dict[str, Any]:
+    guard = dict(DEFAULT_PROMOTION_GUARD)
+    guard.update(get_parameters(config).get("promotion_guard", {}))
+    return guard
 
 
 def get_optimization_grid(config: dict[str, Any]) -> dict[str, Any]:
