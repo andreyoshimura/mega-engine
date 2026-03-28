@@ -1,0 +1,62 @@
+{
+  "timestamp_utc": "2026-03-28T03:39:56.658192+00:00",
+  "base_config_hash": "47fb35ea7add433db64fef557092fb7f01b46b0206e965c76bca8f4910eb6e6f",
+  "recommended_config_hash": "47fb35ea7add433db64fef557092fb7f01b46b0206e965c76bca8f4910eb6e6f",
+  "strategy_name": "megasena_v1",
+  "model_version": "1.0.1",
+  "decision": {
+    "should_promote": true,
+    "reasons": [
+      "promotion_guard_passed"
+    ],
+    "current_summary": {
+      "draws_evaluated": 400,
+      "window": 100,
+      "min_history": 100,
+      "n_games": 6,
+      "ticket_size": 9,
+      "n_sim": 20,
+      "max_intersection": 3,
+      "avg_max_hits": 1.965,
+      "avg_score": 0.025,
+      "rate_ge4": 0.025,
+      "rate_ge5": 0.0,
+      "total_eq6": 0,
+      "avg_coverage_rate": 0.5646,
+      "avg_neglected_draw_numbers": 2.6125
+    },
+    "candidate_summary": {
+      "draws_evaluated": 400,
+      "window": 100,
+      "min_history": 100,
+      "n_games": 6,
+      "ticket_size": 9,
+      "n_sim": 20,
+      "max_intersection": 3,
+      "avg_max_hits": 1.965,
+      "avg_score": 0.025,
+      "rate_ge4": 0.025,
+      "rate_ge5": 0.0,
+      "total_eq6": 0,
+      "avg_coverage_rate": 0.5646,
+      "avg_neglected_draw_numbers": 2.6125
+    },
+    "ratios": {
+      "score_ratio": 1.0,
+      "ge4_ratio": 1.0,
+      "max_hits_ratio": 1.0
+    },
+    "improvements": {
+      "avg_score": 0.0,
+      "rate_ge4": 0.0,
+      "avg_max_hits": 0.0
+    },
+    "guard": {
+      "min_improvement_score": 0.0,
+      "min_improvement_ge4": 0.0,
+      "max_score_drop_ratio": 0.95,
+      "max_ge4_drop_ratio": 0.95,
+      "max_hits_drop_ratio": 0.98
+    }
+  }
+}

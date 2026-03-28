@@ -2,7 +2,7 @@
   "strategy": {
     "strategy_name": "megasena_v1",
     "model_version": "1.0.1",
-    "base_config_hash": "226a41685a34e8178d0601e25a3be32ebd40e12f679a52e81c294bd1f9a20cd6"
+    "base_config_hash": "47fb35ea7add433db64fef557092fb7f01b46b0206e965c76bca8f4910eb6e6f"
   },
   "search": {
     "candidates_tested": 27,
@@ -22,20 +22,102 @@
       "backtest_n_sim": 20
     },
     "summary": {
-      "draws_evaluated": 2887,
+      "draws_evaluated": 400,
       "window": 100,
       "min_history": 100,
       "n_games": 6,
       "ticket_size": 9,
       "n_sim": 20,
       "max_intersection": 3,
-      "avg_max_hits": 2.0187,
-      "avg_score": 0.0284,
-      "rate_ge4": 0.0215,
-      "rate_ge5": 0.0014,
-      "total_eq6": 0
+      "avg_max_hits": 1.965,
+      "avg_score": 0.025,
+      "rate_ge4": 0.025,
+      "rate_ge5": 0.0,
+      "total_eq6": 0,
+      "avg_coverage_rate": 0.5646,
+      "avg_neglected_draw_numbers": 2.6125
     },
-    "recommended_config_hash": "226a41685a34e8178d0601e25a3be32ebd40e12f679a52e81c294bd1f9a20cd6"
+    "recommended_config_hash": "47fb35ea7add433db64fef557092fb7f01b46b0206e965c76bca8f4910eb6e6f"
+  },
+  "current": {
+    "parameters": {
+      "window": 100,
+      "num_games": 6,
+      "ticket_size": 9,
+      "max_intersection": 3,
+      "backtest_n_sim": 20
+    },
+    "summary": {
+      "draws_evaluated": 400,
+      "window": 100,
+      "min_history": 100,
+      "n_games": 6,
+      "ticket_size": 9,
+      "n_sim": 20,
+      "max_intersection": 3,
+      "avg_max_hits": 1.965,
+      "avg_score": 0.025,
+      "rate_ge4": 0.025,
+      "rate_ge5": 0.0,
+      "total_eq6": 0,
+      "avg_coverage_rate": 0.5646,
+      "avg_neglected_draw_numbers": 2.6125
+    }
+  },
+  "promotion_decision": {
+    "should_promote": true,
+    "reasons": [
+      "promotion_guard_passed"
+    ],
+    "current_summary": {
+      "draws_evaluated": 400,
+      "window": 100,
+      "min_history": 100,
+      "n_games": 6,
+      "ticket_size": 9,
+      "n_sim": 20,
+      "max_intersection": 3,
+      "avg_max_hits": 1.965,
+      "avg_score": 0.025,
+      "rate_ge4": 0.025,
+      "rate_ge5": 0.0,
+      "total_eq6": 0,
+      "avg_coverage_rate": 0.5646,
+      "avg_neglected_draw_numbers": 2.6125
+    },
+    "candidate_summary": {
+      "draws_evaluated": 400,
+      "window": 100,
+      "min_history": 100,
+      "n_games": 6,
+      "ticket_size": 9,
+      "n_sim": 20,
+      "max_intersection": 3,
+      "avg_max_hits": 1.965,
+      "avg_score": 0.025,
+      "rate_ge4": 0.025,
+      "rate_ge5": 0.0,
+      "total_eq6": 0,
+      "avg_coverage_rate": 0.5646,
+      "avg_neglected_draw_numbers": 2.6125
+    },
+    "ratios": {
+      "score_ratio": 1.0,
+      "ge4_ratio": 1.0,
+      "max_hits_ratio": 1.0
+    },
+    "improvements": {
+      "avg_score": 0.0,
+      "rate_ge4": 0.0,
+      "avg_max_hits": 0.0
+    },
+    "guard": {
+      "min_improvement_score": 0.0,
+      "min_improvement_ge4": 0.0,
+      "max_score_drop_ratio": 0.95,
+      "max_ge4_drop_ratio": 0.95,
+      "max_hits_drop_ratio": 0.98
+    }
   },
   "recommended_config": {
     "strategy_name": "megasena_v1",
@@ -45,8 +127,40 @@
       "num_games": 6,
       "window": 100,
       "min_history": 100,
+      "backtest_history_limit": 800,
+      "optimization_history_limit": 500,
       "max_intersection": 3,
       "backtest_n_sim": 20,
+      "bottom_pairs": 60,
+      "max_seq": 5,
+      "min_diff": 8,
+      "penalty_weak_pair": 5,
+      "bayesian": {
+        "alpha_prior": 1.0,
+        "beta_prior": 9.0
+      },
+      "feature_weights": {
+        "freq_20": 0.0,
+        "freq_50": 0.0,
+        "freq_100": 1.0,
+        "atraso_score": 0.8,
+        "bayes_mean": 1.0,
+        "bayes_score": 0.7,
+        "score_alpha": 2.1
+      },
+      "promotion_guard": {
+        "min_improvement_score": 0.0,
+        "min_improvement_ge4": 0.0,
+        "max_score_drop_ratio": 0.95,
+        "max_ge4_drop_ratio": 0.95,
+        "max_hits_drop_ratio": 0.98
+      },
+      "learning": {
+        "feature_weight_step_ratio": 0.25,
+        "bayesian_step_ratio": 0.2,
+        "allow_parameter_promotion": true,
+        "require_recalibration_signal": true
+      },
       "monitoring": {
         "recent_window": 5,
         "baseline_window": 20,
@@ -84,18 +198,20 @@
         "backtest_n_sim": 20
       },
       "summary": {
-        "draws_evaluated": 2887,
+        "draws_evaluated": 400,
         "window": 100,
         "min_history": 100,
         "n_games": 6,
         "ticket_size": 9,
         "n_sim": 20,
         "max_intersection": 3,
-        "avg_max_hits": 2.0187,
-        "avg_score": 0.0284,
-        "rate_ge4": 0.0215,
-        "rate_ge5": 0.0014,
-        "total_eq6": 0
+        "avg_max_hits": 1.965,
+        "avg_score": 0.025,
+        "rate_ge4": 0.025,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.5646,
+        "avg_neglected_draw_numbers": 2.6125
       }
     },
     {
@@ -107,18 +223,20 @@
         "backtest_n_sim": 20
       },
       "summary": {
-        "draws_evaluated": 2887,
+        "draws_evaluated": 400,
         "window": 100,
         "min_history": 100,
         "n_games": 6,
         "ticket_size": 9,
         "n_sim": 20,
         "max_intersection": 4,
-        "avg_max_hits": 2.0069,
-        "avg_score": 0.0277,
-        "rate_ge4": 0.0208,
-        "rate_ge5": 0.0014,
-        "total_eq6": 0
+        "avg_max_hits": 1.965,
+        "avg_score": 0.025,
+        "rate_ge4": 0.025,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.5646,
+        "avg_neglected_draw_numbers": 2.6125
       }
     },
     {
@@ -130,18 +248,395 @@
         "backtest_n_sim": 20
       },
       "summary": {
-        "draws_evaluated": 2887,
+        "draws_evaluated": 400,
         "window": 100,
         "min_history": 100,
         "n_games": 6,
         "ticket_size": 9,
         "n_sim": 20,
         "max_intersection": 5,
-        "avg_max_hits": 2.0066,
-        "avg_score": 0.0277,
-        "rate_ge4": 0.0208,
-        "rate_ge5": 0.0014,
-        "total_eq6": 0
+        "avg_max_hits": 1.965,
+        "avg_score": 0.025,
+        "rate_ge4": 0.025,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.5646,
+        "avg_neglected_draw_numbers": 2.6125
+      }
+    },
+    {
+      "parameters": {
+        "window": 100,
+        "num_games": 5,
+        "ticket_size": 9,
+        "max_intersection": 3,
+        "backtest_n_sim": 20
+      },
+      "summary": {
+        "draws_evaluated": 400,
+        "window": 100,
+        "min_history": 100,
+        "n_games": 5,
+        "ticket_size": 9,
+        "n_sim": 20,
+        "max_intersection": 3,
+        "avg_max_hits": 1.8825,
+        "avg_score": 0.025,
+        "rate_ge4": 0.025,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.5229,
+        "avg_neglected_draw_numbers": 2.8625
+      }
+    },
+    {
+      "parameters": {
+        "window": 100,
+        "num_games": 5,
+        "ticket_size": 9,
+        "max_intersection": 4,
+        "backtest_n_sim": 20
+      },
+      "summary": {
+        "draws_evaluated": 400,
+        "window": 100,
+        "min_history": 100,
+        "n_games": 5,
+        "ticket_size": 9,
+        "n_sim": 20,
+        "max_intersection": 4,
+        "avg_max_hits": 1.8825,
+        "avg_score": 0.025,
+        "rate_ge4": 0.025,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.5229,
+        "avg_neglected_draw_numbers": 2.8625
+      }
+    },
+    {
+      "parameters": {
+        "window": 100,
+        "num_games": 5,
+        "ticket_size": 9,
+        "max_intersection": 5,
+        "backtest_n_sim": 20
+      },
+      "summary": {
+        "draws_evaluated": 400,
+        "window": 100,
+        "min_history": 100,
+        "n_games": 5,
+        "ticket_size": 9,
+        "n_sim": 20,
+        "max_intersection": 5,
+        "avg_max_hits": 1.8825,
+        "avg_score": 0.025,
+        "rate_ge4": 0.025,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.5229,
+        "avg_neglected_draw_numbers": 2.8625
+      }
+    },
+    {
+      "parameters": {
+        "window": 50,
+        "num_games": 6,
+        "ticket_size": 9,
+        "max_intersection": 3,
+        "backtest_n_sim": 20
+      },
+      "summary": {
+        "draws_evaluated": 400,
+        "window": 50,
+        "min_history": 100,
+        "n_games": 6,
+        "ticket_size": 9,
+        "n_sim": 20,
+        "max_intersection": 3,
+        "avg_max_hits": 1.9575,
+        "avg_score": 0.02,
+        "rate_ge4": 0.02,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.5696,
+        "avg_neglected_draw_numbers": 2.5825
+      }
+    },
+    {
+      "parameters": {
+        "window": 50,
+        "num_games": 6,
+        "ticket_size": 9,
+        "max_intersection": 4,
+        "backtest_n_sim": 20
+      },
+      "summary": {
+        "draws_evaluated": 400,
+        "window": 50,
+        "min_history": 100,
+        "n_games": 6,
+        "ticket_size": 9,
+        "n_sim": 20,
+        "max_intersection": 4,
+        "avg_max_hits": 1.9575,
+        "avg_score": 0.02,
+        "rate_ge4": 0.02,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.5696,
+        "avg_neglected_draw_numbers": 2.5825
+      }
+    },
+    {
+      "parameters": {
+        "window": 50,
+        "num_games": 6,
+        "ticket_size": 9,
+        "max_intersection": 5,
+        "backtest_n_sim": 20
+      },
+      "summary": {
+        "draws_evaluated": 400,
+        "window": 50,
+        "min_history": 100,
+        "n_games": 6,
+        "ticket_size": 9,
+        "n_sim": 20,
+        "max_intersection": 5,
+        "avg_max_hits": 1.9575,
+        "avg_score": 0.02,
+        "rate_ge4": 0.02,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.5696,
+        "avg_neglected_draw_numbers": 2.5825
+      }
+    },
+    {
+      "parameters": {
+        "window": 50,
+        "num_games": 5,
+        "ticket_size": 9,
+        "max_intersection": 3,
+        "backtest_n_sim": 20
+      },
+      "summary": {
+        "draws_evaluated": 400,
+        "window": 50,
+        "min_history": 100,
+        "n_games": 5,
+        "ticket_size": 9,
+        "n_sim": 20,
+        "max_intersection": 3,
+        "avg_max_hits": 1.87,
+        "avg_score": 0.02,
+        "rate_ge4": 0.02,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.5279,
+        "avg_neglected_draw_numbers": 2.8325
+      }
+    },
+    {
+      "parameters": {
+        "window": 50,
+        "num_games": 5,
+        "ticket_size": 9,
+        "max_intersection": 4,
+        "backtest_n_sim": 20
+      },
+      "summary": {
+        "draws_evaluated": 400,
+        "window": 50,
+        "min_history": 100,
+        "n_games": 5,
+        "ticket_size": 9,
+        "n_sim": 20,
+        "max_intersection": 4,
+        "avg_max_hits": 1.87,
+        "avg_score": 0.02,
+        "rate_ge4": 0.02,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.5279,
+        "avg_neglected_draw_numbers": 2.8325
+      }
+    },
+    {
+      "parameters": {
+        "window": 50,
+        "num_games": 5,
+        "ticket_size": 9,
+        "max_intersection": 5,
+        "backtest_n_sim": 20
+      },
+      "summary": {
+        "draws_evaluated": 400,
+        "window": 50,
+        "min_history": 100,
+        "n_games": 5,
+        "ticket_size": 9,
+        "n_sim": 20,
+        "max_intersection": 5,
+        "avg_max_hits": 1.87,
+        "avg_score": 0.02,
+        "rate_ge4": 0.02,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.5279,
+        "avg_neglected_draw_numbers": 2.8325
+      }
+    },
+    {
+      "parameters": {
+        "window": 100,
+        "num_games": 4,
+        "ticket_size": 9,
+        "max_intersection": 3,
+        "backtest_n_sim": 20
+      },
+      "summary": {
+        "draws_evaluated": 400,
+        "window": 100,
+        "min_history": 100,
+        "n_games": 4,
+        "ticket_size": 9,
+        "n_sim": 20,
+        "max_intersection": 3,
+        "avg_max_hits": 1.76,
+        "avg_score": 0.0175,
+        "rate_ge4": 0.0175,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.4679,
+        "avg_neglected_draw_numbers": 3.1925
+      }
+    },
+    {
+      "parameters": {
+        "window": 100,
+        "num_games": 4,
+        "ticket_size": 9,
+        "max_intersection": 4,
+        "backtest_n_sim": 20
+      },
+      "summary": {
+        "draws_evaluated": 400,
+        "window": 100,
+        "min_history": 100,
+        "n_games": 4,
+        "ticket_size": 9,
+        "n_sim": 20,
+        "max_intersection": 4,
+        "avg_max_hits": 1.76,
+        "avg_score": 0.0175,
+        "rate_ge4": 0.0175,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.4679,
+        "avg_neglected_draw_numbers": 3.1925
+      }
+    },
+    {
+      "parameters": {
+        "window": 100,
+        "num_games": 4,
+        "ticket_size": 9,
+        "max_intersection": 5,
+        "backtest_n_sim": 20
+      },
+      "summary": {
+        "draws_evaluated": 400,
+        "window": 100,
+        "min_history": 100,
+        "n_games": 4,
+        "ticket_size": 9,
+        "n_sim": 20,
+        "max_intersection": 5,
+        "avg_max_hits": 1.76,
+        "avg_score": 0.0175,
+        "rate_ge4": 0.0175,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.4679,
+        "avg_neglected_draw_numbers": 3.1925
+      }
+    },
+    {
+      "parameters": {
+        "window": 50,
+        "num_games": 4,
+        "ticket_size": 9,
+        "max_intersection": 3,
+        "backtest_n_sim": 20
+      },
+      "summary": {
+        "draws_evaluated": 400,
+        "window": 50,
+        "min_history": 100,
+        "n_games": 4,
+        "ticket_size": 9,
+        "n_sim": 20,
+        "max_intersection": 3,
+        "avg_max_hits": 1.7575,
+        "avg_score": 0.015,
+        "rate_ge4": 0.015,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.4742,
+        "avg_neglected_draw_numbers": 3.155
+      }
+    },
+    {
+      "parameters": {
+        "window": 50,
+        "num_games": 4,
+        "ticket_size": 9,
+        "max_intersection": 4,
+        "backtest_n_sim": 20
+      },
+      "summary": {
+        "draws_evaluated": 400,
+        "window": 50,
+        "min_history": 100,
+        "n_games": 4,
+        "ticket_size": 9,
+        "n_sim": 20,
+        "max_intersection": 4,
+        "avg_max_hits": 1.7575,
+        "avg_score": 0.015,
+        "rate_ge4": 0.015,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.4742,
+        "avg_neglected_draw_numbers": 3.155
+      }
+    },
+    {
+      "parameters": {
+        "window": 50,
+        "num_games": 4,
+        "ticket_size": 9,
+        "max_intersection": 5,
+        "backtest_n_sim": 20
+      },
+      "summary": {
+        "draws_evaluated": 400,
+        "window": 50,
+        "min_history": 100,
+        "n_games": 4,
+        "ticket_size": 9,
+        "n_sim": 20,
+        "max_intersection": 5,
+        "avg_max_hits": 1.7575,
+        "avg_score": 0.015,
+        "rate_ge4": 0.015,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.4742,
+        "avg_neglected_draw_numbers": 3.155
       }
     },
     {
@@ -153,18 +648,20 @@
         "backtest_n_sim": 20
       },
       "summary": {
-        "draws_evaluated": 2837,
+        "draws_evaluated": 350,
         "window": 150,
         "min_history": 150,
         "n_games": 6,
         "ticket_size": 9,
         "n_sim": 20,
         "max_intersection": 3,
-        "avg_max_hits": 2.025,
-        "avg_score": 0.0271,
-        "rate_ge4": 0.0219,
-        "rate_ge5": 0.0011,
-        "total_eq6": 0
+        "avg_max_hits": 1.9429,
+        "avg_score": 0.0143,
+        "rate_ge4": 0.0143,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.5614,
+        "avg_neglected_draw_numbers": 2.6314
       }
     },
     {
@@ -176,18 +673,20 @@
         "backtest_n_sim": 20
       },
       "summary": {
-        "draws_evaluated": 2837,
+        "draws_evaluated": 350,
         "window": 150,
         "min_history": 150,
         "n_games": 6,
         "ticket_size": 9,
         "n_sim": 20,
         "max_intersection": 4,
-        "avg_max_hits": 2.013,
-        "avg_score": 0.0261,
-        "rate_ge4": 0.0208,
-        "rate_ge5": 0.0011,
-        "total_eq6": 0
+        "avg_max_hits": 1.9429,
+        "avg_score": 0.0143,
+        "rate_ge4": 0.0143,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.5614,
+        "avg_neglected_draw_numbers": 2.6314
       }
     },
     {
@@ -199,156 +698,20 @@
         "backtest_n_sim": 20
       },
       "summary": {
-        "draws_evaluated": 2837,
+        "draws_evaluated": 350,
         "window": 150,
         "min_history": 150,
         "n_games": 6,
         "ticket_size": 9,
         "n_sim": 20,
         "max_intersection": 5,
-        "avg_max_hits": 2.0106,
-        "avg_score": 0.0261,
-        "rate_ge4": 0.0208,
-        "rate_ge5": 0.0011,
-        "total_eq6": 0
-      }
-    },
-    {
-      "parameters": {
-        "window": 50,
-        "num_games": 6,
-        "ticket_size": 9,
-        "max_intersection": 3,
-        "backtest_n_sim": 20
-      },
-      "summary": {
-        "draws_evaluated": 2887,
-        "window": 50,
-        "min_history": 100,
-        "n_games": 6,
-        "ticket_size": 9,
-        "n_sim": 20,
-        "max_intersection": 3,
-        "avg_max_hits": 1.9986,
-        "avg_score": 0.0236,
-        "rate_ge4": 0.0201,
-        "rate_ge5": 0.0007,
-        "total_eq6": 0
-      }
-    },
-    {
-      "parameters": {
-        "window": 50,
-        "num_games": 6,
-        "ticket_size": 9,
-        "max_intersection": 4,
-        "backtest_n_sim": 20
-      },
-      "summary": {
-        "draws_evaluated": 2887,
-        "window": 50,
-        "min_history": 100,
-        "n_games": 6,
-        "ticket_size": 9,
-        "n_sim": 20,
-        "max_intersection": 4,
-        "avg_max_hits": 1.9903,
-        "avg_score": 0.0232,
-        "rate_ge4": 0.0197,
-        "rate_ge5": 0.0007,
-        "total_eq6": 0
-      }
-    },
-    {
-      "parameters": {
-        "window": 50,
-        "num_games": 6,
-        "ticket_size": 9,
-        "max_intersection": 5,
-        "backtest_n_sim": 20
-      },
-      "summary": {
-        "draws_evaluated": 2887,
-        "window": 50,
-        "min_history": 100,
-        "n_games": 6,
-        "ticket_size": 9,
-        "n_sim": 20,
-        "max_intersection": 5,
-        "avg_max_hits": 1.9875,
-        "avg_score": 0.0232,
-        "rate_ge4": 0.0197,
-        "rate_ge5": 0.0007,
-        "total_eq6": 0
-      }
-    },
-    {
-      "parameters": {
-        "window": 100,
-        "num_games": 5,
-        "ticket_size": 9,
-        "max_intersection": 3,
-        "backtest_n_sim": 20
-      },
-      "summary": {
-        "draws_evaluated": 2887,
-        "window": 100,
-        "min_history": 100,
-        "n_games": 5,
-        "ticket_size": 9,
-        "n_sim": 20,
-        "max_intersection": 3,
-        "avg_max_hits": 1.9089,
-        "avg_score": 0.0211,
-        "rate_ge4": 0.0159,
-        "rate_ge5": 0.001,
-        "total_eq6": 0
-      }
-    },
-    {
-      "parameters": {
-        "window": 100,
-        "num_games": 5,
-        "ticket_size": 9,
-        "max_intersection": 4,
-        "backtest_n_sim": 20
-      },
-      "summary": {
-        "draws_evaluated": 2887,
-        "window": 100,
-        "min_history": 100,
-        "n_games": 5,
-        "ticket_size": 9,
-        "n_sim": 20,
-        "max_intersection": 4,
-        "avg_max_hits": 1.8937,
-        "avg_score": 0.0211,
-        "rate_ge4": 0.0159,
-        "rate_ge5": 0.001,
-        "total_eq6": 0
-      }
-    },
-    {
-      "parameters": {
-        "window": 100,
-        "num_games": 5,
-        "ticket_size": 9,
-        "max_intersection": 5,
-        "backtest_n_sim": 20
-      },
-      "summary": {
-        "draws_evaluated": 2887,
-        "window": 100,
-        "min_history": 100,
-        "n_games": 5,
-        "ticket_size": 9,
-        "n_sim": 20,
-        "max_intersection": 5,
-        "avg_max_hits": 1.8916,
-        "avg_score": 0.0211,
-        "rate_ge4": 0.0159,
-        "rate_ge5": 0.001,
-        "total_eq6": 0
+        "avg_max_hits": 1.9429,
+        "avg_score": 0.0143,
+        "rate_ge4": 0.0143,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.5614,
+        "avg_neglected_draw_numbers": 2.6314
       }
     },
     {
@@ -360,64 +723,20 @@
         "backtest_n_sim": 20
       },
       "summary": {
-        "draws_evaluated": 2837,
+        "draws_evaluated": 350,
         "window": 150,
         "min_history": 150,
         "n_games": 5,
         "ticket_size": 9,
         "n_sim": 20,
         "max_intersection": 3,
-        "avg_max_hits": 1.9189,
-        "avg_score": 0.0204,
-        "rate_ge4": 0.0169,
-        "rate_ge5": 0.0007,
-        "total_eq6": 0
-      }
-    },
-    {
-      "parameters": {
-        "window": 50,
-        "num_games": 5,
-        "ticket_size": 9,
-        "max_intersection": 4,
-        "backtest_n_sim": 20
-      },
-      "summary": {
-        "draws_evaluated": 2887,
-        "window": 50,
-        "min_history": 100,
-        "n_games": 5,
-        "ticket_size": 9,
-        "n_sim": 20,
-        "max_intersection": 4,
-        "avg_max_hits": 1.8892,
-        "avg_score": 0.0197,
-        "rate_ge4": 0.0163,
-        "rate_ge5": 0.0007,
-        "total_eq6": 0
-      }
-    },
-    {
-      "parameters": {
-        "window": 150,
-        "num_games": 5,
-        "ticket_size": 9,
-        "max_intersection": 5,
-        "backtest_n_sim": 20
-      },
-      "summary": {
-        "draws_evaluated": 2837,
-        "window": 150,
-        "min_history": 150,
-        "n_games": 5,
-        "ticket_size": 9,
-        "n_sim": 20,
-        "max_intersection": 5,
-        "avg_max_hits": 1.8978,
-        "avg_score": 0.0197,
-        "rate_ge4": 0.0162,
-        "rate_ge5": 0.0007,
-        "total_eq6": 0
+        "avg_max_hits": 1.8486,
+        "avg_score": 0.0143,
+        "rate_ge4": 0.0143,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.5214,
+        "avg_neglected_draw_numbers": 2.8714
       }
     },
     {
@@ -429,202 +748,45 @@
         "backtest_n_sim": 20
       },
       "summary": {
-        "draws_evaluated": 2837,
+        "draws_evaluated": 350,
         "window": 150,
         "min_history": 150,
         "n_games": 5,
         "ticket_size": 9,
         "n_sim": 20,
         "max_intersection": 4,
-        "avg_max_hits": 1.8985,
-        "avg_score": 0.0194,
-        "rate_ge4": 0.0159,
-        "rate_ge5": 0.0007,
-        "total_eq6": 0
+        "avg_max_hits": 1.8486,
+        "avg_score": 0.0143,
+        "rate_ge4": 0.0143,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.5214,
+        "avg_neglected_draw_numbers": 2.8714
       }
     },
     {
       "parameters": {
-        "window": 50,
+        "window": 150,
         "num_games": 5,
         "ticket_size": 9,
         "max_intersection": 5,
         "backtest_n_sim": 20
       },
       "summary": {
-        "draws_evaluated": 2887,
-        "window": 50,
-        "min_history": 100,
+        "draws_evaluated": 350,
+        "window": 150,
+        "min_history": 150,
         "n_games": 5,
         "ticket_size": 9,
         "n_sim": 20,
         "max_intersection": 5,
-        "avg_max_hits": 1.886,
-        "avg_score": 0.0194,
-        "rate_ge4": 0.0159,
-        "rate_ge5": 0.0007,
-        "total_eq6": 0
-      }
-    },
-    {
-      "parameters": {
-        "window": 50,
-        "num_games": 5,
-        "ticket_size": 9,
-        "max_intersection": 3,
-        "backtest_n_sim": 20
-      },
-      "summary": {
-        "draws_evaluated": 2887,
-        "window": 50,
-        "min_history": 100,
-        "n_games": 5,
-        "ticket_size": 9,
-        "n_sim": 20,
-        "max_intersection": 3,
-        "avg_max_hits": 1.8982,
-        "avg_score": 0.0191,
-        "rate_ge4": 0.0156,
-        "rate_ge5": 0.0007,
-        "total_eq6": 0
-      }
-    },
-    {
-      "parameters": {
-        "window": 100,
-        "num_games": 4,
-        "ticket_size": 9,
-        "max_intersection": 5,
-        "backtest_n_sim": 20
-      },
-      "summary": {
-        "draws_evaluated": 2887,
-        "window": 100,
-        "min_history": 100,
-        "n_games": 4,
-        "ticket_size": 9,
-        "n_sim": 20,
-        "max_intersection": 5,
-        "avg_max_hits": 1.7769,
-        "avg_score": 0.0184,
-        "rate_ge4": 0.0132,
-        "rate_ge5": 0.001,
-        "total_eq6": 0
-      }
-    },
-    {
-      "parameters": {
-        "window": 100,
-        "num_games": 4,
-        "ticket_size": 9,
-        "max_intersection": 4,
-        "backtest_n_sim": 20
-      },
-      "summary": {
-        "draws_evaluated": 2887,
-        "window": 100,
-        "min_history": 100,
-        "n_games": 4,
-        "ticket_size": 9,
-        "n_sim": 20,
-        "max_intersection": 4,
-        "avg_max_hits": 1.7755,
-        "avg_score": 0.0184,
-        "rate_ge4": 0.0132,
-        "rate_ge5": 0.001,
-        "total_eq6": 0
-      }
-    },
-    {
-      "parameters": {
-        "window": 100,
-        "num_games": 4,
-        "ticket_size": 9,
-        "max_intersection": 3,
-        "backtest_n_sim": 20
-      },
-      "summary": {
-        "draws_evaluated": 2887,
-        "window": 100,
-        "min_history": 100,
-        "n_games": 4,
-        "ticket_size": 9,
-        "n_sim": 20,
-        "max_intersection": 3,
-        "avg_max_hits": 1.7804,
-        "avg_score": 0.0177,
-        "rate_ge4": 0.0125,
-        "rate_ge5": 0.001,
-        "total_eq6": 0
-      }
-    },
-    {
-      "parameters": {
-        "window": 50,
-        "num_games": 4,
-        "ticket_size": 9,
-        "max_intersection": 4,
-        "backtest_n_sim": 20
-      },
-      "summary": {
-        "draws_evaluated": 2887,
-        "window": 50,
-        "min_history": 100,
-        "n_games": 4,
-        "ticket_size": 9,
-        "n_sim": 20,
-        "max_intersection": 4,
-        "avg_max_hits": 1.7717,
-        "avg_score": 0.0163,
-        "rate_ge4": 0.0128,
-        "rate_ge5": 0.0007,
-        "total_eq6": 0
-      }
-    },
-    {
-      "parameters": {
-        "window": 50,
-        "num_games": 4,
-        "ticket_size": 9,
-        "max_intersection": 5,
-        "backtest_n_sim": 20
-      },
-      "summary": {
-        "draws_evaluated": 2887,
-        "window": 50,
-        "min_history": 100,
-        "n_games": 4,
-        "ticket_size": 9,
-        "n_sim": 20,
-        "max_intersection": 5,
-        "avg_max_hits": 1.7707,
-        "avg_score": 0.0163,
-        "rate_ge4": 0.0128,
-        "rate_ge5": 0.0007,
-        "total_eq6": 0
-      }
-    },
-    {
-      "parameters": {
-        "window": 50,
-        "num_games": 4,
-        "ticket_size": 9,
-        "max_intersection": 3,
-        "backtest_n_sim": 20
-      },
-      "summary": {
-        "draws_evaluated": 2887,
-        "window": 50,
-        "min_history": 100,
-        "n_games": 4,
-        "ticket_size": 9,
-        "n_sim": 20,
-        "max_intersection": 3,
-        "avg_max_hits": 1.7745,
-        "avg_score": 0.0159,
-        "rate_ge4": 0.0125,
-        "rate_ge5": 0.0007,
-        "total_eq6": 0
+        "avg_max_hits": 1.8486,
+        "avg_score": 0.0143,
+        "rate_ge4": 0.0143,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.5214,
+        "avg_neglected_draw_numbers": 2.8714
       }
     },
     {
@@ -636,41 +798,20 @@
         "backtest_n_sim": 20
       },
       "summary": {
-        "draws_evaluated": 2837,
+        "draws_evaluated": 350,
         "window": 150,
         "min_history": 150,
         "n_games": 4,
         "ticket_size": 9,
         "n_sim": 20,
         "max_intersection": 3,
-        "avg_max_hits": 1.7878,
-        "avg_score": 0.0159,
-        "rate_ge4": 0.0123,
-        "rate_ge5": 0.0007,
-        "total_eq6": 0
-      }
-    },
-    {
-      "parameters": {
-        "window": 150,
-        "num_games": 4,
-        "ticket_size": 9,
-        "max_intersection": 5,
-        "backtest_n_sim": 20
-      },
-      "summary": {
-        "draws_evaluated": 2837,
-        "window": 150,
-        "min_history": 150,
-        "n_games": 4,
-        "ticket_size": 9,
-        "n_sim": 20,
-        "max_intersection": 5,
-        "avg_max_hits": 1.7832,
-        "avg_score": 0.0155,
-        "rate_ge4": 0.012,
-        "rate_ge5": 0.0007,
-        "total_eq6": 0
+        "avg_max_hits": 1.7286,
+        "avg_score": 0.0086,
+        "rate_ge4": 0.0086,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.4624,
+        "avg_neglected_draw_numbers": 3.2257
       }
     },
     {
@@ -682,18 +823,45 @@
         "backtest_n_sim": 20
       },
       "summary": {
-        "draws_evaluated": 2837,
+        "draws_evaluated": 350,
         "window": 150,
         "min_history": 150,
         "n_games": 4,
         "ticket_size": 9,
         "n_sim": 20,
         "max_intersection": 4,
-        "avg_max_hits": 1.7822,
-        "avg_score": 0.0152,
-        "rate_ge4": 0.0116,
-        "rate_ge5": 0.0007,
-        "total_eq6": 0
+        "avg_max_hits": 1.7286,
+        "avg_score": 0.0086,
+        "rate_ge4": 0.0086,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.4624,
+        "avg_neglected_draw_numbers": 3.2257
+      }
+    },
+    {
+      "parameters": {
+        "window": 150,
+        "num_games": 4,
+        "ticket_size": 9,
+        "max_intersection": 5,
+        "backtest_n_sim": 20
+      },
+      "summary": {
+        "draws_evaluated": 350,
+        "window": 150,
+        "min_history": 150,
+        "n_games": 4,
+        "ticket_size": 9,
+        "n_sim": 20,
+        "max_intersection": 5,
+        "avg_max_hits": 1.7286,
+        "avg_score": 0.0086,
+        "rate_ge4": 0.0086,
+        "rate_ge5": 0.0,
+        "total_eq6": 0,
+        "avg_coverage_rate": 0.4624,
+        "avg_neglected_draw_numbers": 3.2257
       }
     }
   ]

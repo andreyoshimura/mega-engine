@@ -1,13 +1,14 @@
 {
-  "timestamp_utc": "2026-03-28T03:28:51.769741+00:00",
-  "action": "hold_current",
+  "timestamp_utc": "2026-03-28T03:40:05.492275+00:00",
+  "action": "promote_incremental",
   "reasons": [
-    "missing_recommendation_artifacts"
+    "promotion_guard_passed",
+    "recalibration_signal_active"
   ],
   "should_recalibrate": true,
-  "should_promote": false,
-  "current_config_hash": "e3ecdac133a9da9a8884688efc2373906c39bb0e361b08cbf295eab2036c4398",
-  "next_config_hash": "e3ecdac133a9da9a8884688efc2373906c39bb0e361b08cbf295eab2036c4398",
+  "should_promote": true,
+  "current_config_hash": "47fb35ea7add433db64fef557092fb7f01b46b0206e965c76bca8f4910eb6e6f",
+  "next_config_hash": "4cab785a07708fc20d540f05830baff391d78af6015771c99fb86b80d7f5041a",
   "current_config": {
     "strategy_name": "megasena_v1",
     "model_version": "1.0.1",
@@ -16,6 +17,8 @@
       "num_games": 6,
       "window": 100,
       "min_history": 100,
+      "backtest_history_limit": 800,
+      "optimization_history_limit": 500,
       "max_intersection": 3,
       "backtest_n_sim": 20,
       "bottom_pairs": 60,
@@ -83,6 +86,8 @@
       "num_games": 6,
       "window": 100,
       "min_history": 100,
+      "backtest_history_limit": 800,
+      "optimization_history_limit": 500,
       "max_intersection": 3,
       "backtest_n_sim": 20,
       "bottom_pairs": 60,
@@ -140,9 +145,64 @@
           5
         ]
       }
-    }
+    },
+    "notes": "incremental_learning_promotion"
   },
-  "recommended_config_hash": "226a41685a34e8178d0601e25a3be32ebd40e12f679a52e81c294bd1f9a20cd6",
+  "recommended_config_hash": "47fb35ea7add433db64fef557092fb7f01b46b0206e965c76bca8f4910eb6e6f",
   "monitor_status": "ok",
-  "promotion_summary": null
+  "promotion_summary": {
+    "should_promote": true,
+    "reasons": [
+      "promotion_guard_passed"
+    ],
+    "current_summary": {
+      "draws_evaluated": 400,
+      "window": 100,
+      "min_history": 100,
+      "n_games": 6,
+      "ticket_size": 9,
+      "n_sim": 20,
+      "max_intersection": 3,
+      "avg_max_hits": 1.965,
+      "avg_score": 0.025,
+      "rate_ge4": 0.025,
+      "rate_ge5": 0.0,
+      "total_eq6": 0,
+      "avg_coverage_rate": 0.5646,
+      "avg_neglected_draw_numbers": 2.6125
+    },
+    "candidate_summary": {
+      "draws_evaluated": 400,
+      "window": 100,
+      "min_history": 100,
+      "n_games": 6,
+      "ticket_size": 9,
+      "n_sim": 20,
+      "max_intersection": 3,
+      "avg_max_hits": 1.965,
+      "avg_score": 0.025,
+      "rate_ge4": 0.025,
+      "rate_ge5": 0.0,
+      "total_eq6": 0,
+      "avg_coverage_rate": 0.5646,
+      "avg_neglected_draw_numbers": 2.6125
+    },
+    "ratios": {
+      "score_ratio": 1.0,
+      "ge4_ratio": 1.0,
+      "max_hits_ratio": 1.0
+    },
+    "improvements": {
+      "avg_score": 0.0,
+      "rate_ge4": 0.0,
+      "avg_max_hits": 0.0
+    },
+    "guard": {
+      "min_improvement_score": 0.0,
+      "min_improvement_ge4": 0.0,
+      "max_score_drop_ratio": 0.95,
+      "max_ge4_drop_ratio": 0.95,
+      "max_hits_drop_ratio": 0.98
+    }
+  }
 }
