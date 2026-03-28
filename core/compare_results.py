@@ -192,12 +192,22 @@ def compute_hits(draw_set: set[int], games: list[tuple[str, list[int]]]) -> dict
 
 
 def main() -> None:
-    latest = load_latest_draw_from_file()
+    try:
+        latest = load_latest_draw_from_file()
+    except FileNotFoundError as exc:
+        print(f"[COMPARE] Skip: {exc}")
+        return
+
     if already_logged(latest.concurso):
         print(f"[COMPARE] Concurso {latest.concurso} ja logado.")
         return
 
-    generated_meta, games = load_generated_games(latest.concurso)
+    try:
+        generated_meta, games = load_generated_games(latest.concurso)
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"[COMPARE] Skip: {exc}")
+        return
+
     draw_set = set(latest.dezenas)
     result = compute_hits(draw_set, games)
     rolling_20 = summarize_recent_events(window=20)
