@@ -1,0 +1,16 @@
+{
+  "game": "megasena",
+  "ticket_size": 9,
+  "draw_size": 6,
+  "n_games": 0,
+  "objective": "maximize_hit_rate_ge4",
+  "games": [],
+  "metadata": {
+    "strategy_name": "megasena_v1",
+    "model_version": "1.0.1",
+    "generated_at_utc": null,
+    "target_concurso": 2989,
+    "source_commit_sha": null,
+    "reconstructed_at_utc": "2026-03-28T01:47:00.152993+00:00"
+  }
+}
