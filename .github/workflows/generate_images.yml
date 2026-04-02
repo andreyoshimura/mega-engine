@@ -16,7 +16,8 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        # v5 ja roda em Node 24 e evita o warning de descontinuacao do Node 20.
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -45,7 +46,8 @@ jobs:
 
       - name: Setup Python
         if: steps.prereq.outputs.has_api_key == 'true' && steps.prereq.outputs.has_games == 'true'
-        uses: actions/setup-python@v5
+        # v6 ja roda em Node 24; GitHub-hosted runners atuais suportam essa versao.
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 

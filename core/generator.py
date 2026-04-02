@@ -382,9 +382,43 @@ def build_output_payload(games: list[list[int]], config: dict[str, Any]) -> dict
     }
 
 
-def export_json(games: list[list[int]], config: dict[str, Any] | None = None) -> dict[str, Any]:
+def _load_existing_output(path: Path) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            payload = json.load(f)
+        return payload if isinstance(payload, dict) else None
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _is_materially_equal_output(current: dict[str, Any], existing: dict[str, Any] | None) -> bool:
+    if not isinstance(existing, dict):
+        return False
+
+    current_meta = current.get("metadata", {}) if isinstance(current.get("metadata"), dict) else {}
+    existing_meta = existing.get("metadata", {}) if isinstance(existing.get("metadata"), dict) else {}
+
+    return (
+        current.get("game") == existing.get("game")
+        and current.get("ticket_size") == existing.get("ticket_size")
+        and current.get("draw_size") == existing.get("draw_size")
+        and current.get("n_games") == existing.get("n_games")
+        and current.get("objective") == existing.get("objective")
+        and current.get("games") == existing.get("games")
+        and current_meta.get("target_concurso") == existing_meta.get("target_concurso")
+    )
+
+
+def export_json(games: list[list[int]], config: dict[str, Any] | None = None) -> tuple[dict[str, Any], bool]:
     config = config or load_config()
     output = build_output_payload(games, config)
+    existing_output = _load_existing_output(OUT_PATH)
+    if _is_materially_equal_output(output, existing_output):
+        print("[GENERATOR] Jogos atuais ja correspondem ao mesmo target_concurso. Nenhuma regravacao necessaria.")
+        return existing_output or output, False
+
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     with OUT_PATH.open("w", encoding="utf-8") as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
@@ -396,11 +430,14 @@ def export_json(games: list[list[int]], config: dict[str, Any] | None = None) ->
         with history_path.open("w", encoding="utf-8") as f:
             json.dump(output, f, indent=2, ensure_ascii=False)
 
-    return output
+    return output, True
 
 
 if __name__ == "__main__":
     config = load_config()
     games = generate_games(seed=derive_generation_seed(config), config=config)
-    export_json(games, config=config)
-    register_strategy(config, execution_type="production")
+    _output, changed = export_json(games, config=config)
+    if changed:
+        register_strategy(config, execution_type="production")
+    else:
+        print("[VERSIONING] Rerun identico. Registro de estrategia nao atualizado.")

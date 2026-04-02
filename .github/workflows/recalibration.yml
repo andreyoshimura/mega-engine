@@ -20,12 +20,14 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        # v5 ja roda em Node 24 e evita o warning de descontinuacao do Node 20.
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        # v6 ja roda em Node 24; GitHub-hosted runners atuais suportam essa versao.
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 

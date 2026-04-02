@@ -1,13 +1,18 @@
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 
 from core.generator import (
+    _is_materially_equal_output,
     build_output_payload,
     build_weak_pair_set,
     check_max_consecutive,
     count_weak_pairs_in_game,
+    export_json,
     generate_games_from_probs,
     scores_from_features,
 )
@@ -47,6 +52,52 @@ class GeneratorTests(unittest.TestCase):
         self.assertEqual(payload["games"][0]["id"], "J01")
         self.assertEqual(payload["metadata"]["strategy_name"], "megasena_v1")
         self.assertIn("generation_seed", payload["metadata"])
+
+    def test_is_materially_equal_output_ignores_generated_timestamp(self):
+        current = {
+            "game": "megasena",
+            "ticket_size": 9,
+            "draw_size": 6,
+            "n_games": 1,
+            "objective": "maximize_hit_rate_ge4",
+            "games": [{"id": "J01", "numbers": [1, 2, 3, 4, 5, 6, 7, 8, 9]}],
+            "metadata": {"generated_at_utc": "2026-04-02T00:00:00+00:00", "target_concurso": 2992},
+        }
+        existing = {
+            **current,
+            "metadata": {"generated_at_utc": "2026-04-02T00:05:00+00:00", "target_concurso": 2992},
+        }
+        self.assertTrue(_is_materially_equal_output(current, existing))
+
+    def test_export_json_skips_rewrite_when_games_and_target_are_equal(self):
+        with TemporaryDirectory() as tmpdir:
+            out_path = Path(tmpdir) / "jogos_gerados.json"
+            history_dir = Path(tmpdir) / "history"
+            config = {"strategy_name": "megasena_v1", "model_version": "1.1.0", "parameters": {"ticket_size": 9}}
+            games = [[1, 2, 3, 4, 5, 6, 7, 8, 9]]
+            existing_payload = {
+                "game": "megasena",
+                "ticket_size": 9,
+                "draw_size": 6,
+                "n_games": 1,
+                "objective": "maximize_hit_rate_ge4",
+                "games": [{"id": "J01", "numbers": [1, 2, 3, 4, 5, 6, 7, 8, 9]}],
+                "metadata": {"generated_at_utc": "2026-04-02T00:00:00+00:00", "target_concurso": 2992},
+            }
+            out_path.write_text(__import__("json").dumps(existing_payload), encoding="utf-8")
+
+            with patch("core.generator.OUT_PATH", out_path), patch("core.generator.OUT_HISTORY_DIR", history_dir), patch(
+                "core.generator.build_output_payload",
+                return_value={
+                    **existing_payload,
+                    "metadata": {"generated_at_utc": "2026-04-02T00:10:00+00:00", "target_concurso": 2992},
+                },
+            ):
+                payload, changed = export_json(games, config=config)
+
+            self.assertFalse(changed)
+            self.assertEqual(payload["metadata"]["target_concurso"], 2992)
+            self.assertFalse(history_dir.exists())
 
     def test_scores_from_features_combines_freq_and_bayesian_weights(self):
         features = pd.DataFrame(
