@@ -19,6 +19,7 @@ from core.config import (
     PERFORMANCE_LOG_PATH,
     RESULTS_PATH,
 )
+from core.time_utils import iso_utc_to_brt_text, utc_now_pair
 
 OUT_JOGOS = OUT_GAMES_PATH
 OUT_HISTORY = OUT_HISTORY_DIR
@@ -287,9 +288,10 @@ def main() -> None:
         draw_set = set(draw.dezenas)
         result = compute_hits(draw_set, games)
         rolling_20 = summarize_recent_events(window=20)
-        logged_at_utc = datetime.now(timezone.utc).isoformat()
+        logged_pair = utc_now_pair("logged_at")
         event = {
             "timestamp_utc": _draw_date_to_timestamp_utc(draw.data),
+            "timestamp_brt": f"{draw.data} 00:00:00",
             "game": GAME_NAME,
             "concurso": draw.concurso,
             "data_sorteio": draw.data,
@@ -303,8 +305,10 @@ def main() -> None:
                 or "megasena_v1",
                 "model_version": generated_meta["metadata"].get("model_version"),
                 "generated_at_utc": generated_meta["metadata"].get("generated_at_utc"),
+                "generated_at_brt": generated_meta["metadata"].get("generated_at_brt")
+                or iso_utc_to_brt_text(generated_meta["metadata"].get("generated_at_utc")),
                 "target_concurso": generated_meta["metadata"].get("target_concurso"),
-                "logged_at_utc": logged_at_utc,
+                **logged_pair,
             },
             **result["summary"],
             "games": result["per_game"],

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from core.config import CONFIG_PROMOTION_LOG_PATH, PROMOTION_DECISION_PATH
+from core.time_utils import utc_now_pair
 from core.versioning import _config_hash
 
 
@@ -74,7 +74,7 @@ def write_promotion_artifacts(
     log_path: Path = CONFIG_PROMOTION_LOG_PATH,
 ) -> None:
     payload = {
-        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        **utc_now_pair("timestamp"),
         "base_config_hash": _config_hash(base_config),
         "recommended_config_hash": _config_hash(recommended_config),
         "strategy_name": base_config.get("strategy_name"),

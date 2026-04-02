@@ -8,6 +8,7 @@ from typing import Any
 
 from core.compare_results import compute_hits
 from core.config import OUT_HISTORY_DIR, OUT_GAMES_PATH, PERFORMANCE_LOG_PATH, REPO_ROOT
+from core.time_utils import iso_utc_to_brt_text, utc_now_pair
 
 AUDIT_REPORT_PATH = REPO_ROOT / "out" / "performance_audit.json"
 LEGACY_INFERRED_SHA = {
@@ -49,9 +50,10 @@ def _build_snapshot_payload(event: dict[str, Any], payload: dict[str, Any], sha:
     metadata.setdefault("strategy_name", meta.get("strategy") or "megasena_v1")
     metadata.setdefault("model_version", meta.get("model_version"))
     metadata.setdefault("generated_at_utc", meta.get("generated_at_utc"))
+    metadata.setdefault("generated_at_brt", meta.get("generated_at_brt") or iso_utc_to_brt_text(meta.get("generated_at_utc")))
     metadata["target_concurso"] = int(event["concurso"])
     metadata["source_commit_sha"] = sha
-    metadata["reconstructed_at_utc"] = datetime.now(timezone.utc).isoformat()
+    metadata.update(utc_now_pair("reconstructed_at"))
     out["metadata"] = metadata
     return out
 
@@ -112,6 +114,7 @@ def audit_and_repair() -> dict[str, Any]:
         repaired_timestamp = _draw_date_to_timestamp_utc(event.get("data_sorteio"))
         if repaired_timestamp:
             repaired["timestamp_utc"] = repaired_timestamp
+            repaired["timestamp_brt"] = f"{event.get('data_sorteio')} 00:00:00"
         repaired["ticket_size"] = int(snapshot_payload.get("ticket_size", event.get("ticket_size", 9)))
         repaired["n_games"] = len(snapshot_games)
         repaired["games"] = recomputed["per_game"]
@@ -125,12 +128,16 @@ def audit_and_repair() -> dict[str, Any]:
         repaired_meta.setdefault("strategy", snapshot_payload["metadata"].get("strategy_name") or "megasena_v1")
         repaired_meta["model_version"] = snapshot_payload["metadata"].get("model_version")
         repaired_meta["generated_at_utc"] = snapshot_payload["metadata"].get("generated_at_utc")
+        repaired_meta["generated_at_brt"] = snapshot_payload["metadata"].get("generated_at_brt") or iso_utc_to_brt_text(
+            snapshot_payload["metadata"].get("generated_at_utc")
+        )
         repaired_meta["target_concurso"] = snapshot_payload["metadata"].get("target_concurso")
         repaired_meta["snapshot_source"] = source
         repaired_meta["snapshot_path"] = str(snapshot_path.relative_to(REPO_ROOT))
         repaired_meta.setdefault("logged_at_utc", event.get("meta", {}).get("logged_at_utc") if isinstance(event.get("meta"), dict) else None)
         if repaired_meta.get("logged_at_utc") is None:
             repaired_meta["logged_at_utc"] = event.get("timestamp_utc")
+        repaired_meta["logged_at_brt"] = repaired_meta.get("logged_at_brt") or iso_utc_to_brt_text(repaired_meta.get("logged_at_utc"))
         repaired["meta"] = repaired_meta
 
         repaired_entries.append(repaired)
@@ -153,7 +160,7 @@ def audit_and_repair() -> dict[str, Any]:
     )
 
     report = {
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        **utc_now_pair("generated_at"),
         "entries_audited": len(audit_rows),
         "all_entries_match_snapshots": all(row["games_match_snapshot"] for row in audit_rows),
         "rows": audit_rows,

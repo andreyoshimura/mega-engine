@@ -39,6 +39,7 @@ from core.config import (
     load_config,
 )
 from core.features_megasena import build_features
+from core.time_utils import iso_utc_to_brt_text, utc_now_pair
 from core.versioning import register_strategy
 
 OUT_PATH = OUT_GAMES_PATH
@@ -356,6 +357,8 @@ def build_output_payload(games: list[list[int]], config: dict[str, Any]) -> dict
         latest_concurso = int(last_result["concurso"])
         next_concurso = latest_concurso + 1
 
+    generated_pair = utc_now_pair("generated_at")
+
     return {
         "game": GAME_NAME,
         "ticket_size": ticket_size,
@@ -367,7 +370,7 @@ def build_output_payload(games: list[list[int]], config: dict[str, Any]) -> dict
             for i, game in enumerate(games)
         ],
         "metadata": {
-            "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+            **generated_pair,
             "strategy_name": config.get("strategy_name"),
             "model_version": config.get("model_version"),
             "source_features": str(FEATURES_PATH.relative_to(REPO_ROOT)),

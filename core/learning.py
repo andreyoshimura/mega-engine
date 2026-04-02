@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 from copy import deepcopy
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +15,7 @@ from core.config import (
     get_learning,
     load_config,
 )
+from core.time_utils import utc_now_pair
 from core.versioning import _config_hash, register_strategy
 
 
@@ -108,7 +108,7 @@ def build_learning_decision(
             reasons.append("recalibration_signal_active")
 
     return {
-        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        **utc_now_pair("timestamp"),
         "action": action,
         "reasons": reasons,
         "should_recalibrate": should_recalibrate,

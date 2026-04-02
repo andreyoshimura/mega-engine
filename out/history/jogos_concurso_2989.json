@@ -9,8 +9,10 @@
     "strategy_name": "megasena_v1",
     "model_version": "1.0.1",
     "generated_at_utc": null,
+    "generated_at_brt": null,
     "target_concurso": 2989,
     "source_commit_sha": null,
-    "reconstructed_at_utc": "2026-03-28T01:47:00.152993+00:00"
+    "reconstructed_at_utc": "2026-04-02T03:45:07.563060+00:00",
+    "reconstructed_at_brt": "02/04/2026 00:45:07"
   }
 }

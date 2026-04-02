@@ -91,32 +91,13 @@
     }
   ],
   "metadata": {
-    "generated_at_utc": "2026-03-28T07:05:51.721718+00:00",
     "strategy_name": "megasena_v1",
     "model_version": "1.0.1",
-    "source_features": "data/features/dezenas.csv",
-    "latest_known_concurso": 2989,
+    "generated_at_utc": "2026-03-28T03:50:22.784050+00:00",
+    "generated_at_brt": "28/03/2026 00:50:22",
     "target_concurso": 2990,
-    "generation_seed": 13568984967246888578,
-    "bayesian": {
-      "alpha_prior": 1.0,
-      "beta_prior": 9.0
-    },
-    "feature_weights": {
-      "freq_20": 0.0,
-      "freq_50": 0.0,
-      "freq_100": 1.0,
-      "atraso_score": 0.8,
-      "bayes_mean": 1.0,
-      "bayes_score": 0.7,
-      "score_alpha": 2.1
-    },
-    "structural_rules": {
-      "bottom_pairs": 60,
-      "max_seq": 5,
-      "min_diff": 8,
-      "penalty_weak_pair": 5
-    },
-    "config_path": "configs/strategy_config.json"
+    "source_commit_sha": null,
+    "reconstructed_at_utc": "2026-04-02T03:45:07.563402+00:00",
+    "reconstructed_at_brt": "02/04/2026 00:45:07"
   }
 }

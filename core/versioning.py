@@ -5,9 +5,9 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from datetime import datetime, timezone
 
 from core.config import MODEL_HISTORY_PATH
+from core.time_utils import utc_now_pair
 
 
 def _config_hash(config: dict) -> str:
@@ -47,7 +47,7 @@ def register_strategy(config: dict, execution_type: str = "production") -> None:
         return
 
     entry = {
-        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        **utc_now_pair("timestamp"),
         "execution_type": execution_type,
         "strategy_name": config.get("strategy_name"),
         "model_version": config.get("model_version"),

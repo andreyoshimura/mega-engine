@@ -13,6 +13,7 @@ warnings.filterwarnings(
 import requests
 
 from core.config import LAST_RESULT_PATH as LAST_JSON, RESULTS_PATH as CSV_PATH
+from core.time_utils import utc_now_pair
 
 API_CAIXA = "https://servicebus2.caixa.gov.br/portaldeloterias/api/megasena"
 API_HISTORICO = "https://loteriascaixa-api.herokuapp.com/api/megasena"
@@ -115,7 +116,7 @@ def save_results(df: pd.DataFrame) -> None:
 
 def save_last(result: dict) -> None:
     payload = dict(result)
-    payload["fetched_at_utc"] = datetime.now(timezone.utc).isoformat()
+    payload.update(utc_now_pair("fetched_at"))
     LAST_JSON.parent.mkdir(parents=True, exist_ok=True)
     with LAST_JSON.open("w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
