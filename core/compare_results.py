@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import json
 import os
 from collections import Counter
@@ -16,12 +17,14 @@ from core.config import (
     OUT_GAMES_PATH,
     OUT_HISTORY_DIR,
     PERFORMANCE_LOG_PATH,
+    RESULTS_PATH,
 )
 
 OUT_JOGOS = OUT_GAMES_PATH
 OUT_HISTORY = OUT_HISTORY_DIR
 PERF_LOG = PERFORMANCE_LOG_PATH
 LAST_RESULT = LAST_RESULT_PATH
+RESULTS_CSV = RESULTS_PATH
 MIN_N = MIN_NUMBER
 MAX_N = MAX_NUMBER
 DEFAULT_DRAW_SIZE = 6
@@ -78,6 +81,35 @@ def load_latest_draw_from_file() -> LatestDraw:
     data = _load_json(LAST_RESULT)
     dezenas = _validate_numbers(_parse_int_list(data.get("dezenas")), expected_len=DEFAULT_DRAW_SIZE)
     return LatestDraw(concurso=int(data["concurso"]), data=str(data["data"]), dezenas=tuple(dezenas))
+
+
+def load_pending_draws(latest_draw: LatestDraw) -> list[LatestDraw]:
+    if not RESULTS_CSV.exists():
+        return [latest_draw]
+
+    draws: list[LatestDraw] = []
+    with RESULTS_CSV.open("r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            try:
+                concurso = int(row["concurso"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            if concurso > latest_draw.concurso:
+                continue
+            try:
+                dezenas = _validate_numbers(
+                    [int(row[f"d{i}"]) for i in range(1, DEFAULT_DRAW_SIZE + 1)],
+                    expected_len=DEFAULT_DRAW_SIZE,
+                )
+            except (KeyError, TypeError, ValueError):
+                continue
+            draws.append(LatestDraw(concurso=concurso, data=str(row["data"]), dezenas=tuple(dezenas)))
+
+    draws.sort(key=lambda draw: draw.concurso)
+    if not draws or draws[-1].concurso != latest_draw.concurso:
+        draws.append(latest_draw)
+    return draws
 
 
 def _payload_to_runtime(payload: dict[str, Any]) -> tuple[dict[str, Any], list[tuple[str, list[int]]]]:
@@ -140,6 +172,26 @@ def already_logged(concurso: int) -> bool:
             if int(event.get("concurso", -1)) == concurso:
                 return True
     return False
+
+
+def load_logged_concursos() -> set[int]:
+    if not PERF_LOG.exists():
+        return set()
+
+    concursos: set[int] = set()
+    with PERF_LOG.open("r", encoding="utf-8") as f:
+        for line in f:
+            if not line.strip():
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            try:
+                concursos.add(int(event.get("concurso", -1)))
+            except (TypeError, ValueError):
+                continue
+    return concursos
 
 
 def summarize_recent_events(window: int = 20) -> dict[str, Any] | None:
@@ -213,48 +265,65 @@ def main() -> None:
         print(f"[COMPARE] Skip: {exc}")
         return
 
-    if already_logged(latest.concurso):
+    logged_concursos = load_logged_concursos()
+    latest_logged_concurso = max(logged_concursos, default=0)
+    pending_draws = [
+        draw
+        for draw in load_pending_draws(latest)
+        if draw.concurso > latest_logged_concurso and draw.concurso not in logged_concursos
+    ]
+    if not pending_draws:
         print(f"[COMPARE] Concurso {latest.concurso} ja logado.")
         return
 
-    try:
-        generated_meta, games = load_generated_games(latest.concurso)
-    except (FileNotFoundError, ValueError) as exc:
-        print(f"[COMPARE] Skip: {exc}")
-        return
+    logged_count = 0
+    for draw in pending_draws:
+        try:
+            generated_meta, games = load_generated_games(draw.concurso)
+        except (FileNotFoundError, ValueError) as exc:
+            print(f"[COMPARE] Skip concurso={draw.concurso}: {exc}")
+            continue
 
-    draw_set = set(latest.dezenas)
-    result = compute_hits(draw_set, games)
-    rolling_20 = summarize_recent_events(window=20)
+        draw_set = set(draw.dezenas)
+        result = compute_hits(draw_set, games)
+        rolling_20 = summarize_recent_events(window=20)
+        logged_at_utc = datetime.now(timezone.utc).isoformat()
+        event = {
+            "timestamp_utc": _draw_date_to_timestamp_utc(draw.data),
+            "game": GAME_NAME,
+            "concurso": draw.concurso,
+            "data_sorteio": draw.data,
+            "dezenas_sorteadas": list(draw.dezenas),
+            "ticket_size": generated_meta["ticket_size"],
+            "n_games": generated_meta["n_games"],
+            "meta": {
+                "git_sha": os.getenv("GITHUB_SHA", "").strip() or None,
+                "strategy": generated_meta["metadata"].get("strategy_name")
+                or os.getenv("STRATEGY_NAME", "").strip()
+                or "megasena_v1",
+                "model_version": generated_meta["metadata"].get("model_version"),
+                "generated_at_utc": generated_meta["metadata"].get("generated_at_utc"),
+                "target_concurso": generated_meta["metadata"].get("target_concurso"),
+                "logged_at_utc": logged_at_utc,
+            },
+            **result["summary"],
+            "games": result["per_game"],
+        }
+        if rolling_20 is not None:
+            event["rolling_20"] = rolling_20
 
-    logged_at_utc = datetime.now(timezone.utc).isoformat()
-    event = {
-        "timestamp_utc": _draw_date_to_timestamp_utc(latest.data),
-        "game": GAME_NAME,
-        "concurso": latest.concurso,
-        "data_sorteio": latest.data,
-        "dezenas_sorteadas": list(latest.dezenas),
-        "ticket_size": generated_meta["ticket_size"],
-        "n_games": generated_meta["n_games"],
-        "meta": {
-            "git_sha": os.getenv("GITHUB_SHA", "").strip() or "unknown",
-            "strategy": generated_meta["metadata"].get("strategy_name") or os.getenv("STRATEGY_NAME", "").strip() or "megasena_v1",
-            "model_version": generated_meta["metadata"].get("model_version"),
-            "generated_at_utc": generated_meta["metadata"].get("generated_at_utc"),
-            "target_concurso": generated_meta["metadata"].get("target_concurso"),
-            "logged_at_utc": logged_at_utc,
-        },
-        **result["summary"],
-        "games": result["per_game"],
-    }
-    if rolling_20 is not None:
-        event["rolling_20"] = rolling_20
+        _append_jsonl(PERF_LOG, event)
+        logged_count += 1
+        print(
+            "[COMPARE] OK:",
+            f"concurso={draw.concurso}",
+            f"n_games={generated_meta['n_games']}",
+            f"max_hits={event['max_hits']}",
+            f"score={event['score']}",
+        )
 
-    _append_jsonl(PERF_LOG, event)
-    n_games = generated_meta["n_games"]
-    max_hits = event["max_hits"]
-    score = event["score"]
-    print("[COMPARE] OK:", f"concurso={latest.concurso}", f"n_games={n_games}", f"max_hits={max_hits}", f"score={score}")
+    if logged_count == 0:
+        print("[COMPARE] Nenhum concurso pendente com snapshot canonico disponivel.")
 
 
 if __name__ == "__main__":

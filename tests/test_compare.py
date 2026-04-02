@@ -1,6 +1,7 @@
 import unittest
+from unittest.mock import mock_open, patch
 
-from core.compare_results import _draw_date_to_timestamp_utc, compute_hits
+from core.compare_results import _draw_date_to_timestamp_utc, compute_hits, load_pending_draws, LatestDraw
 
 
 class CompareTests(unittest.TestCase):
@@ -24,8 +25,25 @@ class CompareTests(unittest.TestCase):
 
 
 class CompareSnapshotTests(unittest.TestCase):
+    def test_load_pending_draws_uses_results_csv_until_latest_draw(self):
+        csv_text = "\n".join(
+            [
+                "concurso,data,d1,d2,d3,d4,d5,d6",
+                "2989,26/03/2026,6,14,28,31,56,59",
+                "2990,28/03/2026,6,14,18,29,30,44",
+                "2991,31/03/2026,4,14,19,23,36,53",
+            ]
+        )
+        latest = LatestDraw(concurso=2991, data="31/03/2026", dezenas=(4, 14, 19, 23, 36, 53))
+        fake_results_csv = mock_open(read_data=csv_text)
+        fake_path = type("FakePath", (), {"exists": lambda self: True, "open": fake_results_csv})()
+
+        with patch("core.compare_results.RESULTS_CSV", fake_path):
+            draws = load_pending_draws(latest)
+
+        self.assertEqual([draw.concurso for draw in draws], [2989, 2990, 2991])
+
     def test_load_generated_games_rejects_wrong_current_target(self):
-        from unittest.mock import patch
         from core.compare_results import load_generated_games
 
         payload = {

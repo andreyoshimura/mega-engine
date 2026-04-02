@@ -20,6 +20,15 @@ def _load_json(path: Path) -> Any:
         return json.load(f)
 
 
+def _normalize_git_sha(value: Any) -> str | None:
+    sha = str(value).strip().lower() if value is not None else ""
+    if len(sha) < 7 or len(sha) > 40:
+        return None
+    if any(ch not in "0123456789abcdef" for ch in sha):
+        return None
+    return sha
+
+
 def _git_show_json(sha: str, rel_path: str) -> dict[str, Any]:
     raw = subprocess.check_output(["git", "show", f"{sha}:{rel_path}"], cwd=REPO_ROOT, text=True)
     return json.loads(raw)
@@ -63,7 +72,7 @@ def audit_and_repair() -> dict[str, Any]:
     for event in entries:
         concurso = int(event["concurso"])
         meta = dict(event.get("meta", {}) if isinstance(event.get("meta"), dict) else {})
-        sha = meta.get("git_sha") or LEGACY_INFERRED_SHA.get(concurso)
+        sha = _normalize_git_sha(meta.get("git_sha")) or LEGACY_INFERRED_SHA.get(concurso)
         source = "log_only"
         payload = None
 
@@ -111,6 +120,8 @@ def audit_and_repair() -> dict[str, Any]:
         repaired_meta = dict(meta)
         if sha:
             repaired_meta["git_sha"] = sha
+        else:
+            repaired_meta["git_sha"] = None
         repaired_meta.setdefault("strategy", snapshot_payload["metadata"].get("strategy_name") or "megasena_v1")
         repaired_meta["model_version"] = snapshot_payload["metadata"].get("model_version")
         repaired_meta["generated_at_utc"] = snapshot_payload["metadata"].get("generated_at_utc")

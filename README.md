@@ -155,17 +155,47 @@ A Mega-Sena roda nas datas locais de sorteio:
 - quinta
 - sabado
 
-Os workflows foram documentados para seguir essa regra local:
+Os workflows foram documentados para seguir essa regra local.
+
+Tabela operacional:
 
 - [daily_generate.yml](/media/msx/SD200/VSCODE/github/mega-engine/.github/workflows/daily_generate.yml)
-  roda `03:00` em `America/Sao_Paulo` nas mesmas datas locais dos sorteios
+  horario local: `03:00` nas `tercas`, `quintas` e `sabados`
+  cron GitHub em UTC: `0 6 * * 2,4,6`
 - [compare_results.yml](/media/msx/SD200/VSCODE/github/mega-engine/.github/workflows/compare_results.yml)
-  roda fallback `23:05` em `America/Sao_Paulo` nas mesmas datas locais dos sorteios, depois da divulgacao do resultado por volta das `22:00`
+  polling local em janela de resultado:
+  `19:05`, `19:35`, `20:05`, `20:35`, `21:05`, `21:35`, `22:05`, `22:35`, `23:05`, `23:35`, `00:05`, `00:35`, `01:05`, `01:35`
+  cron GitHub em UTC:
+  `5,35 22,23 * * 2,4,6`
+  `5,35 0-4 * * 3,5,0`
+- [recalibration.yml](/media/msx/SD200/VSCODE/github/mega-engine/.github/workflows/recalibration.yml)
+  horario local: `01:30` de `segunda-feira`
+  cron GitHub em UTC: `30 4 * * 1`
+- [generate_images.yml](/media/msx/SD200/VSCODE/github/mega-engine/.github/workflows/generate_images.yml)
+  horario local: `06:00` de `domingo`
+  cron GitHub em UTC: `0 9 * * 0`
+- [backtest.yml](/media/msx/SD200/VSCODE/github/mega-engine/.github/workflows/backtest.yml)
+  execucao manual, sem cron
+- [optimize.yml](/media/msx/SD200/VSCODE/github/mega-engine/.github/workflows/optimize.yml)
+  execucao manual, sem cron
+- [recalibration_full.yml](/media/msx/SD200/VSCODE/github/mega-engine/.github/workflows/recalibration_full.yml)
+  execucao manual, sem cron
 
-Observacao importante:
+Regra mental para converter:
 
 - o cron do GitHub Actions e sempre em UTC
-- por isso o fallback da comparacao aparece como `02:05` de quarta, sexta e domingo em UTC, embora corresponda a `23:05` do mesmo dia local do sorteio no Brasil
+- para este projeto, pensar em `UTC = America/Sao_Paulo + 3h`
+- exemplo:
+  `03:00` local = `06:00` UTC
+  `19:05` local = `22:05` UTC
+  `23:35` local = `02:35` UTC do dia seguinte
+  `01:30` local = `04:30` UTC
+
+Regra de manutencao:
+
+- sempre adicionar comentarios nos workflows explicando o horario local em `America/Sao_Paulo`
+- sempre documentar no proprio YAML a conversao entre horario local e cron UTC
+- sempre preferir guardrails por data local e janela local em vez de depender de um unico horario fixo
 
 ------------------------------------------------------------------------
 

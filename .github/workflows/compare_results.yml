@@ -1,15 +1,21 @@
 name: Compare Mega-Sena Results
 
 on:
-  workflow_run:
-    workflows: ["Mega Daily Generate"]
-    types: [completed]
+  repository_dispatch:
+    types: [megasena_new_draw]
   workflow_dispatch:
   schedule:
-    # Fallback no mesmo dia local do sorteio:
-    # 23:05 em America/Sao_Paulo nas tercas, quintas e sabados.
-    # Em UTC, isso corresponde a 02:05 nas quartas, sextas e domingos.
-    - cron: "5 2 * * 3,5,0"
+    # Polling leve em torno do horario variavel de publicacao do resultado.
+    # Janela local alvo em America/Sao_Paulo:
+    # - dia do sorteio: 19:05, 19:35, 20:05, 20:35
+    # - ainda no mesmo dia local: 21:05 ate 23:35
+    # - madrugada seguinte local: 00:05 ate 01:35
+    #
+    # Conversao para cron UTC do GitHub:
+    # - 19:05-20:35 local nas tercas, quintas e sabados => 22:05-23:35 UTC nos mesmos dias
+    # - 21:05-01:35 local do sorteio => 00:05-04:35 UTC no dia UTC seguinte
+    - cron: "5,35 22,23 * * 2,4,6"
+    - cron: "5,35 0-4 * * 3,5,0"
 
 permissions:
   contents: write
@@ -17,9 +23,6 @@ permissions:
 jobs:
   compare:
     runs-on: ubuntu-latest
-    if: >
-      github.event_name != 'workflow_run' ||
-      github.event.workflow_run.conclusion == 'success'
 
     steps:
       - name: Checkout repository
@@ -27,56 +30,81 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check compare calendar guard
+        id: calendar
+        run: |
+          allowed=false
+          local_weekday="$(TZ=America/Sao_Paulo date +%u)"
+          local_hour="$(TZ=America/Sao_Paulo date +%H)"
+          local_stamp="$(TZ=America/Sao_Paulo date '+%Y-%m-%d %H:%M:%S %Z')"
+
+          if [ "${{ github.event_name }}" = "repository_dispatch" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            allowed=true
+          elif { [ "${local_weekday}" = "2" ] || [ "${local_weekday}" = "4" ] || [ "${local_weekday}" = "6" ]; } && [ "${local_hour}" -ge 19 ]; then
+            allowed=true
+          elif { [ "${local_weekday}" = "3" ] || [ "${local_weekday}" = "5" ] || [ "${local_weekday}" = "7" ]; } && [ "${local_hour}" -le 1 ]; then
+            allowed=true
+          fi
+
+          echo "allowed=${allowed}" >> "${GITHUB_OUTPUT}"
+          echo "local_stamp=${local_stamp}" >> "${GITHUB_OUTPUT}"
+          echo "local_weekday=${local_weekday}" >> "${GITHUB_OUTPUT}"
+          echo "local_hour=${local_hour}" >> "${GITHUB_OUTPUT}"
+
+          if [ "${allowed}" != "true" ]; then
+            echo "Skipping compare workflow outside allowed Mega-Sena result window."
+          fi
+
       - name: Check compare prerequisites
         id: prereq
+        if: steps.calendar.outputs.allowed == 'true'
         run: |
-          has_last_result=false
           has_games=false
-
-          if [ -f data/last_result.json ]; then
-            has_last_result=true
-          fi
 
           if [ -f out/jogos_gerados.json ]; then
             has_games=true
           fi
 
-          echo "has_last_result=${has_last_result}" >> "${GITHUB_OUTPUT}"
           echo "has_games=${has_games}" >> "${GITHUB_OUTPUT}"
 
-          if [ "${has_last_result}" != "true" ] || [ "${has_games}" != "true" ]; then
-            echo "Skipping compare workflow: data/last_result.json or out/jogos_gerados.json missing."
+          if [ "${has_games}" != "true" ]; then
+            echo "Skipping compare workflow: out/jogos_gerados.json missing."
           fi
 
       - name: Setup Python
-        if: steps.prereq.outputs.has_last_result == 'true' && steps.prereq.outputs.has_games == 'true'
+        if: steps.calendar.outputs.allowed == 'true' && steps.prereq.outputs.has_games == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install project
-        if: steps.prereq.outputs.has_last_result == 'true' && steps.prereq.outputs.has_games == 'true'
+        if: steps.calendar.outputs.allowed == 'true' && steps.prereq.outputs.has_games == 'true'
         run: |
           python -m pip install --upgrade pip
           pip install .
 
-      - name: Compare latest draw
-        if: steps.prereq.outputs.has_last_result == 'true' && steps.prereq.outputs.has_games == 'true'
+      - name: Ingest latest result
+        if: steps.calendar.outputs.allowed == 'true' && steps.prereq.outputs.has_games == 'true'
+        run: |
+          python -m core.ingest_megasena
+
+      - name: Compare pending draws
+        if: steps.calendar.outputs.allowed == 'true' && steps.prereq.outputs.has_games == 'true'
         run: |
           python -m core.compare_results
 
       - name: Monitor performance
-        if: steps.prereq.outputs.has_last_result == 'true' && steps.prereq.outputs.has_games == 'true'
+        if: steps.calendar.outputs.allowed == 'true' && steps.prereq.outputs.has_games == 'true'
         run: |
           python -m core.monitor_performance
 
       - name: Commit results (if changed)
-        if: steps.prereq.outputs.has_last_result == 'true' && steps.prereq.outputs.has_games == 'true'
+        if: steps.calendar.outputs.allowed == 'true' && steps.prereq.outputs.has_games == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add data/performance_log.jsonl out/performance_monitor.json out/recalibration_signal.json
+          git add data/results/megasena.csv data/last_result.json data/performance_log.jsonl out/performance_monitor.json out/recalibration_signal.json
 
           if ! git diff --cached --quiet; then
             git commit -m "chore: log Mega-Sena results"

@@ -2,7 +2,9 @@ name: Mega Daily Generate
 
 on:
   schedule:
-    # 03:00 em America/Sao_Paulo nas mesmas datas locais dos sorteios:
+    # GitHub cron usa UTC.
+    # 06:00 UTC = 03:00 em America/Sao_Paulo.
+    # Este job gera os jogos no inicio da manha local das datas de sorteio:
     # tercas, quintas e sabados.
     - cron: "0 6 * * 2,4,6"
   workflow_dispatch:

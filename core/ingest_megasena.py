@@ -1,9 +1,15 @@
 from __future__ import annotations
 
 import json
+import warnings
 from datetime import datetime, timezone
 
 import pandas as pd
+
+warnings.filterwarnings(
+    "ignore",
+    message=r"urllib3 .* or chardet .* doesn't match a supported version!",
+)
 import requests
 
 from core.config import LAST_RESULT_PATH as LAST_JSON, RESULTS_PATH as CSV_PATH

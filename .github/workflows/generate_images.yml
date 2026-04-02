@@ -3,6 +3,8 @@ name: Generate Weekly Mega Image
 on:
   workflow_dispatch:
   schedule:
+    # GitHub cron usa UTC.
+    # 09:00 UTC = 06:00 em America/Sao_Paulo no domingo local.
     - cron: "0 9 * * 0"
 
 permissions:

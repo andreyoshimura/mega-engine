@@ -3,6 +3,8 @@ name: Mega Recalibration Lite
 on:
   workflow_dispatch:
   schedule:
+    # GitHub cron usa UTC.
+    # 04:30 UTC = 01:30 em America/Sao_Paulo na segunda-feira local.
     - cron: "30 4 * * 1"
 
 permissions:
