@@ -91,7 +91,7 @@
     }
   ],
   "metadata": {
-    "generated_at_utc": "2026-04-02T02:51:15.129358+00:00",
+    "generated_at_utc": "2026-04-02T03:29:41.313864+00:00",
     "strategy_name": "megasena_v1",
     "model_version": "1.0.1",
     "source_features": "data/features/dezenas.csv",
