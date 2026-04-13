@@ -1,6 +1,6 @@
 {
-  "timestamp_utc": "2026-04-06T06:15:16.408449+00:00",
-  "timestamp_brt": "06/04/2026 03:15:16",
+  "timestamp_utc": "2026-04-13T06:30:45.846340+00:00",
+  "timestamp_brt": "13/04/2026 03:30:45",
   "action": "hold_current",
   "reasons": [
     "no_effective_change"
