@@ -1,9 +1,7 @@
 {
-  "should_recalibrate": true,
-  "reasons": [
-    "max_hits_drop"
-  ],
-  "latest_concurso": 3003,
+  "should_recalibrate": false,
+  "reasons": [],
+  "latest_concurso": 3004,
   "strategy_name": "megasena_v1",
   "model_version": "1.0.1"
 }
