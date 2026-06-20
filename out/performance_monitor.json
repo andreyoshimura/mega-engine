@@ -2,8 +2,8 @@
   "status": "ok",
   "strategy_name": "megasena_v1",
   "model_version": "1.0.1",
-  "total_events": 45,
-  "latest_concurso": 3019,
+  "total_events": 46,
+  "latest_concurso": 3020,
   "monitoring": {
     "recent_window": 5,
     "baseline_window": 20,
@@ -15,7 +15,7 @@
   "recent_window": {
     "draws": 5,
     "avg_score": 0.2,
-    "avg_max_hits": 2.4,
+    "avg_max_hits": 2.6,
     "rate_ge4": 0.2,
     "rate_ge5": 0.0
   },
@@ -31,7 +31,7 @@
     "reasons": [],
     "ratios": {
       "score_ratio": 4.0,
-      "max_hits_ratio": 1.1163,
+      "max_hits_ratio": 1.2093,
       "ge4_ratio": 4.0
     }
   }
