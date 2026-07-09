@@ -5,7 +5,7 @@
     "max_hits_drop",
     "ge4_drop"
   ],
-  "latest_concurso": 3027,
+  "latest_concurso": 3028,
   "strategy_name": "megasena_v1",
   "model_version": "1.0.1"
 }
