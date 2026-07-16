@@ -2,8 +2,8 @@
   "status": "ok",
   "strategy_name": "megasena_v1",
   "model_version": "1.0.1",
-  "total_events": 56,
-  "latest_concurso": 3030,
+  "total_events": 57,
+  "latest_concurso": 3031,
   "monitoring": {
     "recent_window": 5,
     "baseline_window": 20,
