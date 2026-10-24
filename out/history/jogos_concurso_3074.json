@@ -1,0 +1,123 @@
+{
+  "game": "megasena",
+  "ticket_size": 9,
+  "draw_size": 6,
+  "n_games": 6,
+  "objective": "maximize_hit_rate_ge4",
+  "games": [
+    {
+      "id": "J01",
+      "numbers": [
+        5,
+        6,
+        23,
+        27,
+        28,
+        30,
+        31,
+        43,
+        58
+      ]
+    },
+    {
+      "id": "J02",
+      "numbers": [
+        10,
+        11,
+        16,
+        17,
+        21,
+        33,
+        40,
+        48,
+        58
+      ]
+    },
+    {
+      "id": "J03",
+      "numbers": [
+        11,
+        14,
+        19,
+        36,
+        39,
+        42,
+        43,
+        55,
+        60
+      ]
+    },
+    {
+      "id": "J04",
+      "numbers": [
+        2,
+        4,
+        9,
+        14,
+        30,
+        32,
+        40,
+        47,
+        52
+      ]
+    },
+    {
+      "id": "J05",
+      "numbers": [
+        7,
+        17,
+        24,
+        27,
+        32,
+        35,
+        37,
+        38,
+        55
+      ]
+    },
+    {
+      "id": "J06",
+      "numbers": [
+        5,
+        9,
+        13,
+        37,
+        41,
+        45,
+        51,
+        53,
+        56
+      ]
+    }
+  ],
+  "metadata": {
+    "generated_at_utc": "2026-10-24T10:39:28.503351+00:00",
+    "generated_at_brt": "24/10/2026 07:39:28",
+    "strategy_name": "megasena_v1",
+    "model_version": "1.0.1",
+    "source_features": "data/features/dezenas.csv",
+    "latest_known_concurso": 3073,
+    "target_concurso": 3074,
+    "generation_seed": 11881826953600308066,
+    "bayesian": {
+      "alpha_prior": 1.0,
+      "beta_prior": 9.0
+    },
+    "feature_weights": {
+      "freq_20": 0.0,
+      "freq_50": 0.0,
+      "freq_100": 1.0,
+      "atraso_score": 0.8,
+      "bayes_mean": 1.0,
+      "bayes_score": 0.7,
+      "score_alpha": 2.1
+    },
+    "structural_rules": {
+      "bottom_pairs": 60,
+      "max_seq": 5,
+      "min_diff": 8,
+      "penalty_weak_pair": 5
+    },
+    "config_path": "configs/strategy_config.json"
+  }
+}
