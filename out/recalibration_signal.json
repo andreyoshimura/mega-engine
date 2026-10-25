@@ -2,10 +2,9 @@
   "should_recalibrate": true,
   "reasons": [
     "score_drop",
-    "max_hits_drop",
     "ge4_drop"
   ],
-  "latest_concurso": 3072,
+  "latest_concurso": 3073,
   "strategy_name": "megasena_v1",
   "model_version": "1.0.1"
 }
