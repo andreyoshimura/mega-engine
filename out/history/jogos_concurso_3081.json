@@ -1,0 +1,123 @@
+{
+  "game": "megasena",
+  "ticket_size": 9,
+  "draw_size": 6,
+  "n_games": 6,
+  "objective": "maximize_hit_rate_ge4",
+  "games": [
+    {
+      "id": "J01",
+      "numbers": [
+        5,
+        6,
+        11,
+        27,
+        28,
+        30,
+        33,
+        36,
+        58
+      ]
+    },
+    {
+      "id": "J02",
+      "numbers": [
+        2,
+        14,
+        16,
+        17,
+        39,
+        40,
+        48,
+        58,
+        60
+      ]
+    },
+    {
+      "id": "J03",
+      "numbers": [
+        2,
+        4,
+        6,
+        23,
+        31,
+        35,
+        42,
+        52,
+        53
+      ]
+    },
+    {
+      "id": "J04",
+      "numbers": [
+        8,
+        10,
+        14,
+        15,
+        22,
+        25,
+        30,
+        31,
+        43
+      ]
+    },
+    {
+      "id": "J05",
+      "numbers": [
+        13,
+        16,
+        21,
+        27,
+        35,
+        37,
+        38,
+        43,
+        50
+      ]
+    },
+    {
+      "id": "J06",
+      "numbers": [
+        1,
+        10,
+        27,
+        29,
+        40,
+        41,
+        42,
+        49,
+        51
+      ]
+    }
+  ],
+  "metadata": {
+    "generated_at_utc": "2026-11-03T13:54:58.648337+00:00",
+    "generated_at_brt": "03/11/2026 10:54:58",
+    "strategy_name": "megasena_v1",
+    "model_version": "1.0.1",
+    "source_features": "data/features/dezenas.csv",
+    "latest_known_concurso": 3080,
+    "target_concurso": 3081,
+    "generation_seed": 7012719395117511889,
+    "bayesian": {
+      "alpha_prior": 1.0,
+      "beta_prior": 9.0
+    },
+    "feature_weights": {
+      "freq_20": 0.0,
+      "freq_50": 0.0,
+      "freq_100": 1.0,
+      "atraso_score": 0.8,
+      "bayes_mean": 1.0,
+      "bayes_score": 0.7,
+      "score_alpha": 2.1
+    },
+    "structural_rules": {
+      "bottom_pairs": 60,
+      "max_seq": 5,
+      "min_diff": 8,
+      "penalty_weak_pair": 5
+    },
+    "config_path": "configs/strategy_config.json"
+  }
+}
