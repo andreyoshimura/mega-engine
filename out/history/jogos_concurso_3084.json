@@ -1,0 +1,123 @@
+{
+  "game": "megasena",
+  "ticket_size": 9,
+  "draw_size": 6,
+  "n_games": 6,
+  "objective": "maximize_hit_rate_ge4",
+  "games": [
+    {
+      "id": "J01",
+      "numbers": [
+        2,
+        6,
+        11,
+        14,
+        16,
+        23,
+        30,
+        48,
+        58
+      ]
+    },
+    {
+      "id": "J02",
+      "numbers": [
+        17,
+        27,
+        28,
+        31,
+        40,
+        42,
+        43,
+        54,
+        58
+      ]
+    },
+    {
+      "id": "J03",
+      "numbers": [
+        1,
+        5,
+        6,
+        17,
+        22,
+        36,
+        47,
+        53,
+        60
+      ]
+    },
+    {
+      "id": "J04",
+      "numbers": [
+        5,
+        8,
+        21,
+        30,
+        33,
+        35,
+        38,
+        43,
+        52
+      ]
+    },
+    {
+      "id": "J05",
+      "numbers": [
+        4,
+        10,
+        18,
+        23,
+        25,
+        27,
+        32,
+        45,
+        60
+      ]
+    },
+    {
+      "id": "J06",
+      "numbers": [
+        1,
+        4,
+        14,
+        24,
+        29,
+        31,
+        41,
+        51,
+        52
+      ]
+    }
+  ],
+  "metadata": {
+    "generated_at_utc": "2026-11-10T14:38:41.038126+00:00",
+    "generated_at_brt": "10/11/2026 11:38:41",
+    "strategy_name": "megasena_v1",
+    "model_version": "1.0.1",
+    "source_features": "data/features/dezenas.csv",
+    "latest_known_concurso": 3083,
+    "target_concurso": 3084,
+    "generation_seed": 1601841572123941116,
+    "bayesian": {
+      "alpha_prior": 1.0,
+      "beta_prior": 9.0
+    },
+    "feature_weights": {
+      "freq_20": 0.0,
+      "freq_50": 0.0,
+      "freq_100": 1.0,
+      "atraso_score": 0.8,
+      "bayes_mean": 1.0,
+      "bayes_score": 0.7,
+      "score_alpha": 2.1
+    },
+    "structural_rules": {
+      "bottom_pairs": 60,
+      "max_seq": 5,
+      "min_diff": 8,
+      "penalty_weak_pair": 5
+    },
+    "config_path": "configs/strategy_config.json"
+  }
+}
