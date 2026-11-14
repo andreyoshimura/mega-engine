@@ -1,0 +1,123 @@
+{
+  "game": "megasena",
+  "ticket_size": 9,
+  "draw_size": 6,
+  "n_games": 6,
+  "objective": "maximize_hit_rate_ge4",
+  "games": [
+    {
+      "id": "J01",
+      "numbers": [
+        4,
+        5,
+        14,
+        16,
+        17,
+        30,
+        40,
+        43,
+        58
+      ]
+    },
+    {
+      "id": "J02",
+      "numbers": [
+        2,
+        6,
+        27,
+        28,
+        31,
+        39,
+        42,
+        49,
+        58
+      ]
+    },
+    {
+      "id": "J03",
+      "numbers": [
+        10,
+        11,
+        23,
+        25,
+        26,
+        27,
+        30,
+        36,
+        48
+      ]
+    },
+    {
+      "id": "J04",
+      "numbers": [
+        6,
+        23,
+        33,
+        35,
+        43,
+        45,
+        53,
+        56,
+        60
+      ]
+    },
+    {
+      "id": "J05",
+      "numbers": [
+        5,
+        6,
+        12,
+        24,
+        29,
+        36,
+        37,
+        38,
+        51
+      ]
+    },
+    {
+      "id": "J06",
+      "numbers": [
+        13,
+        15,
+        17,
+        21,
+        22,
+        25,
+        28,
+        32,
+        38
+      ]
+    }
+  ],
+  "metadata": {
+    "generated_at_utc": "2026-11-14T13:16:14.263234+00:00",
+    "generated_at_brt": "14/11/2026 10:16:14",
+    "strategy_name": "megasena_v1",
+    "model_version": "1.0.1",
+    "source_features": "data/features/dezenas.csv",
+    "latest_known_concurso": 3085,
+    "target_concurso": 3086,
+    "generation_seed": 17746212883077368403,
+    "bayesian": {
+      "alpha_prior": 1.0,
+      "beta_prior": 9.0
+    },
+    "feature_weights": {
+      "freq_20": 0.0,
+      "freq_50": 0.0,
+      "freq_100": 1.0,
+      "atraso_score": 0.8,
+      "bayes_mean": 1.0,
+      "bayes_score": 0.7,
+      "score_alpha": 2.1
+    },
+    "structural_rules": {
+      "bottom_pairs": 60,
+      "max_seq": 5,
+      "min_diff": 8,
+      "penalty_weak_pair": 5
+    },
+    "config_path": "configs/strategy_config.json"
+  }
+}
