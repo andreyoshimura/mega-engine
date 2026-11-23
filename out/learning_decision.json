@@ -1,11 +1,11 @@
 {
-  "timestamp_utc": "2026-11-16T13:01:19.279483+00:00",
-  "timestamp_brt": "16/11/2026 10:01:19",
+  "timestamp_utc": "2026-11-23T15:07:33.466940+00:00",
+  "timestamp_brt": "23/11/2026 12:07:33",
   "action": "hold_current",
   "reasons": [
     "no_effective_change"
   ],
-  "should_recalibrate": true,
+  "should_recalibrate": false,
   "should_promote": true,
   "current_config_hash": "47fb35ea7add433db64fef557092fb7f01b46b0206e965c76bca8f4910eb6e6f",
   "next_config_hash": "47fb35ea7add433db64fef557092fb7f01b46b0206e965c76bca8f4910eb6e6f",
