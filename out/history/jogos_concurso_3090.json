@@ -1,0 +1,123 @@
+{
+  "game": "megasena",
+  "ticket_size": 9,
+  "draw_size": 6,
+  "n_games": 6,
+  "objective": "maximize_hit_rate_ge4",
+  "games": [
+    {
+      "id": "J01",
+      "numbers": [
+        4,
+        6,
+        10,
+        16,
+        17,
+        23,
+        27,
+        30,
+        58
+      ]
+    },
+    {
+      "id": "J02",
+      "numbers": [
+        11,
+        14,
+        18,
+        24,
+        38,
+        39,
+        40,
+        43,
+        58
+      ]
+    },
+    {
+      "id": "J03",
+      "numbers": [
+        2,
+        6,
+        22,
+        25,
+        29,
+        31,
+        36,
+        42,
+        48
+      ]
+    },
+    {
+      "id": "J04",
+      "numbers": [
+        1,
+        5,
+        12,
+        30,
+        33,
+        38,
+        42,
+        50,
+        60
+      ]
+    },
+    {
+      "id": "J05",
+      "numbers": [
+        7,
+        9,
+        14,
+        17,
+        19,
+        28,
+        36,
+        51,
+        60
+      ]
+    },
+    {
+      "id": "J06",
+      "numbers": [
+        5,
+        16,
+        28,
+        31,
+        37,
+        39,
+        53,
+        54,
+        57
+      ]
+    }
+  ],
+  "metadata": {
+    "generated_at_utc": "2026-11-24T17:19:13.609342+00:00",
+    "generated_at_brt": "24/11/2026 14:19:13",
+    "strategy_name": "megasena_v1",
+    "model_version": "1.0.1",
+    "source_features": "data/features/dezenas.csv",
+    "latest_known_concurso": 3089,
+    "target_concurso": 3090,
+    "generation_seed": 1778663428404652879,
+    "bayesian": {
+      "alpha_prior": 1.0,
+      "beta_prior": 9.0
+    },
+    "feature_weights": {
+      "freq_20": 0.0,
+      "freq_50": 0.0,
+      "freq_100": 1.0,
+      "atraso_score": 0.8,
+      "bayes_mean": 1.0,
+      "bayes_score": 0.7,
+      "score_alpha": 2.1
+    },
+    "structural_rules": {
+      "bottom_pairs": 60,
+      "max_seq": 5,
+      "min_diff": 8,
+      "penalty_weak_pair": 5
+    },
+    "config_path": "configs/strategy_config.json"
+  }
+}
